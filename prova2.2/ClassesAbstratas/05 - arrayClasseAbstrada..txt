@@ -1,0 +1,9 @@
+/*  5 - Não podemos aplicar o operador new em FiguraGeometrica, mas porque então
+    podemos realizar o seguinte código de instanciação:
+    abstract class FiguraGeometrica {
+    //...
+    }
+    let figuras: FiguraGeometrica[] = new Array(); 
+ */
+
+ Isso ocorre porque ao criar um array de figuras geométricas em TypeScript ou uma implementação de Lista em java (como ArrayList), eu consigo receber objetos herdados por essa classe, por mais que não possa instanciá-la diretamente, utilizando assim do polimorfismo
