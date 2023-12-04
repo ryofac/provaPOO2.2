@@ -1,9 +1,12 @@
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
-import Exceptions.AlreadyExistsException;
+import Exceptions.PostException.PostNotFoundException;
+import Exceptions.ProfileException.ProfileAlreadyExistsException;
 import Exceptions.ProfileException.ProfileNotFoundException;
 import Models.AdvancedPost;
 import Models.Post;
@@ -34,9 +37,9 @@ public class App {
     // This class is used for menu options
     private class Option {
         String title; // Nome que será mostrado
-        Consumer<Object> callback; // função que será chamada pela opcao
+        Runnable callback; // função que será chamada pela opcao
 
-        Option(String title, Consumer<Object> callback) {
+        Option(String title, Runnable callback) {
             this.title = title;
             this.callback = callback;
         }
@@ -49,41 +52,18 @@ public class App {
     }
 
     private Option[] options = {
-            new Option("Create profile", none -> {
-                includeProfile();
-            }),
-            new Option("Create Post", none -> {
-                createPost();
-            }),
-            new Option("Show Feed", none -> {
-                showAllPosts();
-            }),
-            new Option("Show users", none -> {
-                socialNetwork.showAllProfiles();
-            }),
-            new Option("Search Profile", none -> {
-                searchProfile();
-            }),
-            new Option("Search Post", none -> {
-                searchPost();
-            }),
-            new Option("Like Post", none -> {
-                likePost();
-            }),
-            new Option("Dislike Post", none -> {
-                dislikePost();
-            }),
-            new Option("Delete Post", none -> {
-                deletePost();
-            }),
-            new Option("Delete Profile", none -> {
-                removeProfile();
-            }),
-            new Option("Show Popular Advanced Posts", none -> {
-                showPopularAPosts();
-            }),
-
-    };
+            new Option("Create profile", this::includeProfile),
+            new Option("Create Post", this::createPost),
+            new Option("Show Feed", this::showAllPosts),
+            new Option("Show users", this::showAllProfiles),
+            new Option("Search Profile", this::searchProfile),
+            new Option("Search Post", this::searchPost),
+            new Option("Like Post", this::likePost),
+            new Option("Dislike Post", this::dislikePost),
+            new Option("Delete Post", this::deletePost),
+            new Option("Delete Profile", this::removeProfile),
+            new Option("Show Popular Advanced Posts", this::showPopularAPosts),
+        };
 
     private void showMenu(Option... options) {
         String title = MENU_TITLE;
@@ -96,27 +76,24 @@ public class App {
         System.out.println(String.format(ConsoleColors.RED_BRIGHT + "+> %d - %s", 0, "Exit" + ConsoleColors.RESET));
     }
 
-    private void showPopularAPosts() {
-        socialNetwork.showPopularAPosts();
-    }
 
     private void deletePost() {
         Integer idPost = IOUtils.getInt("Enter the post id: ");
         try {
             socialNetwork.deletePost(idPost);
             System.out.println("Post deleted!");
-        } catch (ProfileNotFoundException e) {
+        } catch (PostNotFoundException e) {
             System.out.println("Post not founded!");
         }
     }
 
     private void includeProfile() {
         try {
-            String name = IOUtils.getTextNormalized("Enter the profile username: ");
-            String email = IOUtils.getTextNormalized("Enter profile email: ");
+            String name = IOUtils.getText("Enter the profile username: ").trim();
+            String email = IOUtils.getTextNormalized("Enter profile email: ").trim();
             socialNetwork.includeProfile(socialNetwork.createProfile(name, email));
             System.out.println("User created!");
-        } catch (AlreadyExistsException e) {
+        } catch (ProfileAlreadyExistsException e) {
             System.out.println(ConsoleColors.RED + "CANNOT CREATE USER: " + e.getMessage() + ConsoleColors.RESET);
             return;
         } catch (Exception e) {
@@ -143,17 +120,21 @@ public class App {
     }
 
     private void removeProfile() {
-        socialNetwork.showAllProfiles();
+        showAllProfiles();
         System.out.println(
                 ConsoleColors.RED + "The posts related to that person will be removed too!" + ConsoleColors.RESET);
         Integer id = IOUtils.getInt("Enter the id: ");
-        socialNetwork.removeProfile(id);
+        removeProfile(id);
         System.out.println("Profile removed!");
     }
 
     private void showAllPosts() {
         System.out.println("-=-=-=-=-=- FEED =-=-=-=-=-=-= ");
-        socialNetwork.showAllPosts();
+       viewPosts();
+        for (Post post : socialNetwork.getAllPosts()) {
+            System.out.println(formatPost(post));
+        }
+        socialNetwork.removeSeenPosts();
         System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
     }
 
@@ -333,9 +314,9 @@ public class App {
     }
 
     public void showPopularAPosts() {
-        System.out.println("====== Popular Avanced Posts: =======");
+        System.out.println("====== Popular Advanced Posts: =======");
         // TODO: Método getAdvancedPosts in SocialNetwork
-        for (Post post : postRepository.getAllPosts()) {
+        for (Post post : socialNetwork.getAllPosts()) {
             if (post instanceof AdvancedPost && post.isPopular()) {
                 System.out.println(formatPost(post));
             }
@@ -346,13 +327,13 @@ public class App {
     public void showAllProfiles() {
         // TODO: Método getAllProfiles in SocialNetwork
         System.out.println("================ PROFILES ===============");
-        for (Profile profile : profileRepository.getAllProfiles()) {
+        for (Profile profile : socialNetwork.getAllProfiles()) {
             System.out.println(formatProfile(profile));
         }
     }
 
     public void showPostsPerProfile(Profile owner) throws ProfileNotFoundException {
-        List<Post> postsFounded = socialNetwork.findPostByOwner(owner);
+        List<Post> postsFounded = socialNetwork.findPostsbyOwner(owner);
         if (postsFounded.size() == 0) {
             throw new ProfileNotFoundException("Posts with this owner does not exist");
         }
@@ -381,12 +362,127 @@ public class App {
         }
     }
 
-    public void showAllPosts() {
-        viewPosts();
-        for (Post post : postRepository.getAllPosts()) {
-            System.out.println(formatPost(post));
+  
+
+    public String formatProfile(Profile profile) {
+        String formated = String.format("""
+                ===================================
+                        <ID: %d> @%s : %s
+                ===================================""", profile.getId(), profile.getName(), profile.getEmail());
+        return formated;
+    }
+
+    public void showPopularPosts() {
+        for (Post post : socialNetwork.getAllPosts()) {
+            if (post.isPopular()) {
+                System.out.println(formatPost(post));
+            }
         }
-        postRepository.removeSeenPosts();
+    }
+
+    public void showPopularHashtags() {
+        List<String> hashtags = socialNetwork.get();
+        for (String hashtag : hashtags) {
+            System.out.println(hashtag);
+        }
+    }
+
+    public void viewPosts() {
+        for (Post post : socialNetwork.getAllPosts()) {
+            if (post instanceof AdvancedPost) {
+                ((AdvancedPost) post).decrementViews();
+            }
+        }
+
+    }
+
+
+    // Como vem os dados :
+    // Post = TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES
+    // AdvancedPost =
+    // TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES;REAMAININGVIEWS;HASHTAGS
+    public void loadPostsfromFile(String filepath) {
+        List<String> lines = IOUtils.readLinesOnFile(filepath);
+        Stream<String> linesStream = lines.stream();
+        linesStream.forEach(line -> {
+            String[] data = line.split(";");
+            try {
+                switch (data[0]) {
+                    case "P":
+                        // incluindo o post segundo os dados do arquivo
+                        socialNetwork.
+                        includePost(
+                                new Post(Integer.parseInt(data[1]), data[2],
+                                        socialNetwork.findProfileById(Integer.parseInt(data[3])), LocalDateTime.parse(data[4]),
+                                        Integer.parseInt(data[5]), Integer.parseInt(data[6])));
+                        break;
+
+                    case "AP":
+                        // Criando o post a ser adicionado
+                        AdvancedPost toBeAdded = new AdvancedPost(Integer.parseInt(data[1]), data[2],
+                                socialNetwork.findProfileById(Integer.parseInt(data[3])), Integer.parseInt(data[5]),
+                                Integer.parseInt(data[6]), LocalDateTime.parse(data[4]), Integer.parseInt(data[7]));
+
+                        // Pegando só as hashtags do arquivo
+                        String[] hashtags = data[8].split("-");
+
+                        // Adcionando as hashtags do arquivo ao perfil
+                        for (String hashtag : hashtags) {
+                            toBeAdded.addHashtag(hashtag);
+                        }
+                        socialNetwork.includePost(toBeAdded);
+                        break;
+                }
+            } catch (ProfileNotFoundException e) {
+                System.out.println("ERROR: user founded in file not related to any post");
+                e.printStackTrace();
+            }
+        });
+    }
+
+    // Como vem os dados: id;name;email
+    public void loadProfilesFromFile(String filepath) {
+        List<String> lines = IOUtils.readLinesOnFile(filepath);
+        Stream<String> linesStream = lines.stream();
+        linesStream.forEach(line -> {
+            String[] data = line.split(";");
+            try {
+                socialNetwork.includeProfile(new Profile(Integer.parseInt(data[0]), data[1], data[2]));
+
+            } catch (ProfileAlreadyExistsException e) {
+                System.err.println("ERROR: Conflict with existing user in memory and in file");
+                e.printStackTrace();
+            }
+        });
+
+    }
+
+    // Persitência de dados em arquivos de texto: 
+    public void writeProfilesinFile(String filepath) {
+        StringBuilder str = new StringBuilder();
+        for (Profile profile : socialNetwork.getAllProfiles()) {
+            str.append(profile.toString().trim() + "\n");
+        }
+        IOUtils.writeOnFile(filepath, str.toString());
+    }
+
+    public void writePostsinFile(String filepath) {
+        StringBuilder str = new StringBuilder();
+        for (Post post : socialNetwork.getAllPosts()) {
+            str.append(post.toString().trim() + "\n");
+        }
+        IOUtils.writeOnFile(filepath, str.toString());
+    }
+
+    public void saveData(String profilePath, String postPath) {
+        writeProfilesinFile(profilePath);
+        writePostsinFile(postPath);
+
+    }
+
+    public void readData(String profilePath, String postPath) {
+        loadProfilesFromFile(profilePath);
+        loadPostsfromFile(postPath);
     }
 
 }

@@ -1,5 +1,5 @@
-import Repositories.PostRepository;
-import Repositories.ProfileRepository;
+import TextRepositories.PostRepository;
+import TextRepositories.ProfileRepository;
 
 public class Main {
      public static void main(String[] args) {

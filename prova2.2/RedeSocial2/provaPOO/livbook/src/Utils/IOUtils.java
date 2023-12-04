@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 
+/**
+ * A classe IOUtils te dá u
+ */
 public class IOUtils {
     // Scanner utilizado para as operações de entrada e saída da classe
     private static Scanner scanner = new Scanner(System.in, "UTF-8").useDelimiter("\n");
@@ -108,6 +111,14 @@ public class IOUtils {
 
         }
 
+    }
+    public void animateText(String text) throws InterruptedException {
+        for (int i = 0; i < 10; i++) {
+            System.out.print("\r" + text);
+            Thread.sleep(500);
+            System.out.print("\r" + " ".repeat(text.length()));
+            Thread.sleep(500);
+        }
     }
 
 }

@@ -1,6 +1,5 @@
-package Repositories;
+package TextRepositories;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -11,40 +10,41 @@ import Exceptions.PostException.PostNotFoundException;
 import Models.AdvancedPost;
 import Models.Post;
 import Models.Profile;
-import Utils.IOUtils;
+import Repositories.IPostRepository;
 
-/*
- * Stores and handle the posts data
- */
 
-public class PostRepository {
+public class PostRepository implements IPostRepository {
     private List<Post> posts = new ArrayList<Post>();
 
-    public void writePostsinFile(String filepath) {
-        StringBuilder str = new StringBuilder();
-        for (Post post : posts) {
-            str.append(post.toString().trim() + "\n");
-        }
-        IOUtils.writeOnFile(filepath, str.toString());
+
+    public void deletePost(Post post) throws PostNotFoundException {
+        Post postFound = findPostById(post.getId());
+        posts.remove(postFound);
     }
 
+
+    @Override
     public List<Post> getAllPosts() {
         return posts;
     }
 
+    @Override
     public Integer getPostAmount() {
         return posts.size();
     }
 
+    @Override
     public void removeSeenPosts() {
         posts.removeIf(post -> post instanceof AdvancedPost && !((AdvancedPost) post).canSee());
 
     }
 
+    @Override
     public void removePostsFromUser(Profile profile) {
         posts.removeIf(post -> post.getOwner().equals(profile));
     }
 
+    @Override
     public Post findPostById(Integer id) throws PostNotFoundException {
         Stream<Post> postsStream = posts.stream();
         Stream<Post> postsFound = postsStream.filter(post -> post.getId() == id);
@@ -52,13 +52,17 @@ public class PostRepository {
         return found.orElseThrow(() -> new PostNotFoundException("Post not found!"));
     }
 
-    public List<Post> findPostByOwner(Profile owner) {
+    @Override
+    public List<Post> findPostByOwner(Profile owner) throws PostNotFoundException {
         Stream<Post> postsStream = posts.stream();
         Stream<Post> postsFinded = postsStream.filter(post -> post.getOwner().equals(owner));
-        return postsFinded.collect(Collectors.toList());
+        List<Post> postList = postsFinded.collect(Collectors.toList());
+        if(postList.isEmpty()) throw new PostNotFoundException("Post not found!");
+        return postList;
     }
 
-    public List<Post> findPostByHashtag(String hashtag) {
+    @Override
+    public List<Post> findPostByHashtag(String hashtag) throws PostNotFoundException{
         Stream<Post> postsStream = posts.stream();
         Stream<Post> postsFinded = postsStream.filter(post -> {
             if (post instanceof AdvancedPost) {
@@ -66,42 +70,34 @@ public class PostRepository {
             }
             return false;
         });
-        return postsFinded.collect(Collectors.toList());
+        List<Post> postList = postsFinded.collect(Collectors.toList());
+        if(postList.isEmpty()) throw new PostNotFoundException("Post not found!");
+        return postList;
 
     }
 
+    @Override
     public void includePost(Post post) {
         posts.add(post);
     }
 
-    public List<Post> findPostByProfile(String searchTerm) {
+    @Override
+    public List<Post> findPostByProfile(String searchTerm) throws PostNotFoundException {
         Stream<Post> postsStream = posts.stream();
         Stream<Post> postsFinded = postsStream.filter(post -> post.getOwner().getName().equals(searchTerm));
-        return postsFinded.collect(Collectors.toList());
+        List<Post> postList = postsFinded.collect(Collectors.toList());
+        if(postList.isEmpty()) throw new PostNotFoundException("Post not found!");
+        return postList;
 
     }
 
-    public List<Post> findPostByPhrase(String searchTerm) {
+    @Override
+    public List<Post> findPostByPhrase(String searchTerm) throws PostNotFoundException {
         Stream<Post> postsStream = posts.stream();
         Stream<Post> postsFinded = postsStream.filter(post -> post.getText().contains(searchTerm));
-        return postsFinded.collect(Collectors.toList());
+        List<Post> postList = postsFinded.collect(Collectors.toList());
+        if(postList.isEmpty()) throw new PostNotFoundException("Post not found!");
+        return postList;
     }
-
-    public void updatePost(Post post) {
-        Optional<Post> founded = findPostById(post.getId());
-        if (founded.isEmpty()) {
-            return;
-        }
-        Post postFounded = founded.get();
-        postFounded.setText(post.getText());
-    }
-
-    public List<String> getHashtags() {
-        return null;
-    }
-
-    public void deletePost(Post post) {
-        posts.remove(post);
-    }
-
+    
 }
