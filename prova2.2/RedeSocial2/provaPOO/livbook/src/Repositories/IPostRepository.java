@@ -76,6 +76,13 @@ public interface IPostRepository {
      */
     List<Post> findPostByPhrase(String searchTerm) throws PostNotFoundException;
 
+    /**
+     * Deleta um post fornecido de todos os 
+     * @param postFound
+     * @throws PostNotFoundException
+     */
+    void deletePost(int idPost) throws PostNotFoundException;
+
 
     
 }

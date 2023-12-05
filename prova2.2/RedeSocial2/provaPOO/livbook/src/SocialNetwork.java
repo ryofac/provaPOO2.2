@@ -6,14 +6,14 @@ import Exceptions.ProfileException.ProfileNotFoundException;
 import Models.AdvancedPost;
 import Models.Post;
 import Models.Profile;
-import TextRepositories.PostRepository;
-import TextRepositories.ProfileRepository;
+import Repositories.IPostRepository;
+import Repositories.IProfileRepository;
 
 public class SocialNetwork {
-    private ProfileRepository profileRepository;
-    private PostRepository postRepository;
+    private IProfileRepository profileRepository;
+    private IPostRepository postRepository;
 
-    public SocialNetwork(ProfileRepository profileRepository, PostRepository postRepository) {
+    public SocialNetwork(IProfileRepository profileRepository, IPostRepository postRepository) {
         this.profileRepository = profileRepository;
         this.postRepository = postRepository;
     }
@@ -77,7 +77,7 @@ public class SocialNetwork {
 
      /**
       * Método que responsável por encapsular a lógica de criar um post avançado
-      * @param texto texto do post a ser criado
+      * @param text texto do post a ser criado
       * @param owner a instância de perfil que representa o dono da postagem
       * @param remainingViews a quantidade de views restantes que o post avançado deverá ter 
       * @return uma nova instância de Advanced Post, com o id gerado baseado na quantidade de posts presentes
@@ -183,8 +183,11 @@ public class SocialNetwork {
     }
 
     public void deletePost(Integer idPost) throws PostNotFoundException {
-        Post postFound = postRepository.findPostById(idPost);
-        postRepository.deletePost(postFound);
+        postRepository.deletePost(idPost);
+    }
+
+    public void removeSeenPosts(){
+        postRepository.removeSeenPosts();
     }
 
     

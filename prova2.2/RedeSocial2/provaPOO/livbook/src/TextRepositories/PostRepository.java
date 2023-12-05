@@ -99,5 +99,12 @@ public class PostRepository implements IPostRepository {
         if(postList.isEmpty()) throw new PostNotFoundException("Post not found!");
         return postList;
     }
+
+
+    @Override
+    public void deletePost(int idPost) throws PostNotFoundException {
+        Post found = findPostById(idPost);
+        posts.remove(found);
+    }
     
 }
