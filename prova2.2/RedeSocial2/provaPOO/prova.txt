@@ -1,0 +1,16 @@
+============================= Proposta de Prova ==============================
+Fazer uma rede social: Perfil, com atributos privados id, nome, email -> construtor
+
+Perfil é um usuário
+
+NOME -> login
+
+Pomédotos get de leitura
+Postagem -> tem como curtir
+PostagemAvançada -> Quantidade de vizualizações (Quando chega a um certo número, ele é deletado)
+Classes Básicas (ou de domínio) que parecem com uma tabela: Perfil, Postagem e Postagem avançada
+
+-> Repositórios! => Repositories: 
+	Repositório de Perfis (Aonde eu guardo os perfis, na memória, nos Arrays)
+	Repositório de Postagens (Onde armazeno as postagens)
+
