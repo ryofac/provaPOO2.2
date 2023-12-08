@@ -19,6 +19,7 @@ public class IOUtils {
      *  Método para obter uma string passando uma mensagem, que também é uma string
      * @param msg o texto que será mostrado ao pedir a mensagem
      * @return o input coletado do usuário
+     * @throws InterruptedException
      */
     static public String getText(String msg) {
         System.out.print(ConsoleColors.YELLOW_UNDERLINED + msg + ConsoleColors.RESET);
@@ -77,9 +78,10 @@ public class IOUtils {
     
     /**
      * Método que quando invocado cria a ilusão de apagar a tela exibindo vários caracteres de quebra de linha
+     * @throws InterruptedException
      */
-    static public void clearScreen() {
-        System.out.print("<Enter....>");
+    static public void clearScreen(){
+       System.out.println("<Enter....>");
         scanner.next();
         System.out.println("\n".repeat(20));
     }
@@ -145,7 +147,8 @@ public class IOUtils {
         }
 
     }
-    public void animateText(String text) throws InterruptedException {
+
+   static public void animateText(String text) throws InterruptedException {
         for (int i = 0; i < 10; i++) {
             System.out.print("\r" + text);
             Thread.sleep(500);

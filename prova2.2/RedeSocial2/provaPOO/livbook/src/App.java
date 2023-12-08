@@ -114,10 +114,10 @@ public class App {
             socialNetwork.includeProfile(socialNetwork.createProfile(name, email));
             System.out.println("User created!");
         } catch (ProfileAlreadyExistsException e) {
-            System.out.println(ConsoleColors.RED + "CANNOT CREATE USER: " + e.getMessage() + ConsoleColors.RESET);
+            IOUtils.showErr( "CANNOT CREATE USER: " + e.getMessage());
             return;
         } catch (Exception e) {
-            System.out.println("Ocorreu um erro...");
+            System.out.println("An Unexpected Error Ocurred: ");
             e.printStackTrace();
         }
     }
@@ -189,16 +189,17 @@ public class App {
         try {
             Profile foundByEmail = socialNetwork.findProfileByEmail(email);
             Profile foundByName = socialNetwork.findProfileByName(name);
+
             if (foundByEmail != foundByName) {
-                System.out.println(ConsoleColors.RED + "Autentication failed!" + ConsoleColors.RESET);
+                IOUtils.showErr("Autentication failed!");
                 return;
             }
+            
             String text = IOUtils.getText("What do you want to share with world today? >_<\n > ").replace(";", "*");
 
             List<String> hashtagsFound = findHashtagInText(text);
             if (hashtagsFound.size() > 0)
-                System.out.println(ConsoleColors.YELLOW
-                        + "Warn: you can only embed hashtags in a advanced post" + ConsoleColors.RESET);
+                IOUtils.showWarn("Warning: you can only embed hashtags in a advanced post \\o/");
             Boolean isAdvanced = IOUtils.getChoice("Do you want to turn this into a advanced post? ");
             Post created;
             if (isAdvanced) {
@@ -214,8 +215,7 @@ public class App {
                     ((AdvancedPost) created).addHashtag(hashtag);
                 } else {
                     text = text.replace(hashtag, " ");
-                    System.out.println(ConsoleColors.RED + "Hashtag " + hashtag
-                            + " removed: you have to create an advanced post" + ConsoleColors.RESET);
+                    IOUtils.showWarn("Hashtag " + hashtag + " removed: you have to create an advanced post");
                 }
 
             }
@@ -299,13 +299,13 @@ public class App {
                 // saveData(PROFILE_PATH, POST_PATH);
 
             } catch (NumberFormatException e) {
-                System.out.println(ConsoleColors.RED + "Enter only numbers, please!" + ConsoleColors.RESET);
-            }
+                IOUtils.showWarn("Enter only numbers, please!");
 
             IOUtils.clearScreen();
 
         }
-
+    }
+        System.out.println("See u soon ! >_<");
         IOUtils.closeScanner(); 
 
     }
