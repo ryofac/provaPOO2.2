@@ -9,33 +9,48 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 
 /**
- * A classe IOUtils te dá u
+ * A classe IOUtils é utilizada para implementar operações comuns de entrada e saída
  */
 public class IOUtils {
     // Scanner utilizado para as operações de entrada e saída da classe
     private static Scanner scanner = new Scanner(System.in, "UTF-8").useDelimiter("\n");
 
-    // Método para obter uma string passando uma mensagem, que também é uma string
+    /**
+     *  Método para obter uma string passando uma mensagem, que também é uma string
+     * @param msg o texto que será mostrado ao pedir a mensagem
+     * @return o input coletado do usuário
+     */
     static public String getText(String msg) {
         System.out.print(ConsoleColors.YELLOW_UNDERLINED + msg + ConsoleColors.RESET);
         String input = scanner.next().trim();
         return input;
     }
 
-    // Método para obter uma escolha (Sim ou não)
+    /**
+     * Método para obter uma escolha do usuário (Sim ou não)
+     * @param msg o texto que será mostrado antes de pedir a escolha
+     * @return *true* se o texto for vazio ou contiver o caractere "S"
+     */
     static public Boolean getChoice(String msg) {
         String result = getTextNormalized(msg + " [S/n] \n > ");
         return result == "" || result.contains("s");
 
     }
 
-    // Usado para obter dados que no "banco" estão em um formato específico como
-    // username
+    /**
+     * Usado para obter dados que precisam ser em caixa baixa e sem espaços
+     * @param msg o texto que será mostrado antes de pedir o input do usuário
+     * @return o texto do usuário, normalizado
+     */
     static public String getTextNormalized(String msg) {
         return getText(msg).trim().toLowerCase();
     }
 
-    // Método para obter um inteiro passando uma mensagem que é uma string
+    /**  Método para obter um inteiro do input do usuário passando uma mensagem que é uma string
+     * @param msg o texto que será mostrado antes de pedir o input do usuário
+     * @return a conversão em inteiro do input, se possível
+     * @throws NumberFormatException caso a conversão para inteiro não seja possível
+     */
     static public Integer getInt(String msg) throws NumberFormatException {
         System.out.print(ConsoleColors.GREEN + msg + ConsoleColors.RESET);
         String input = scanner.next().trim();
@@ -43,8 +58,26 @@ public class IOUtils {
 
     }
 
-    // Método que quando invocado cria a ilusão de apagar a tela:
-    // exibe vários caracteres de quebra de linha
+    /**
+     * Exibe um texto em vermelho para representar um erro
+     * @param msg a mensagem a ser exibida
+     */
+    static public void showErr(String msg){
+        System.out.println(ConsoleColors.RED + msg + ConsoleColors.RESET);
+    }
+
+     /**
+     * Exibe um texto em amarelo para representar um aviso
+     * @param msg a mensagem a ser exibida
+     */
+    static public void showWarn(String msg){
+        System.out.println(ConsoleColors.YELLOW + msg + ConsoleColors.RESET);
+    }
+    
+    
+    /**
+     * Método que quando invocado cria a ilusão de apagar a tela exibindo vários caracteres de quebra de linha
+     */
     static public void clearScreen() {
         System.out.print("<Enter....>");
         scanner.next();

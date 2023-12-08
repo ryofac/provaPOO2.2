@@ -26,6 +26,14 @@ public class SocialNetwork {
         return postRepository.getAllPosts();
     }
 
+    public boolean existsPosts(){
+        return postRepository.getPostAmount() > 0;
+    }
+
+    public boolean existsProfiles(){
+        return profileRepository.getProfileAmount() > 0;
+    }
+
     /**
      * Método que retorna o próximo id possível do perfil a ser criado
      * @return um inteiro que representa o próximo id do perfil a ser criado
@@ -97,8 +105,8 @@ public class SocialNetwork {
      * @throws ProfileNotFoundException caso o perfil não seja encontrado
      */
     public void removeProfile(Integer id) throws ProfileNotFoundException {
-        var foundedById = profileRepository.findProfileById(id);
-        postRepository.removePostsFromUser(foundedById);
+        var foundById = profileRepository.findProfileById(id);
+        postRepository.removePostsFromUser(foundById);
         profileRepository.removeProfile(id);
 
     }
@@ -140,13 +148,13 @@ public class SocialNetwork {
     }
 
     public void like(Integer idPost) throws PostNotFoundException {
-        Post founded = this.findPostsbyId(idPost);
-        founded.like();
+        Post found = this.findPostsbyId(idPost);
+        found.like();
     }
 
     public void dislike(Integer idPost) throws PostNotFoundException {
-        Post founded = this.findPostsbyId(idPost);
-        founded.dislike();
+        Post found = this.findPostsbyId(idPost);
+        found.dislike();
     }
 
     public void decrementViews(Integer idPost) throws PostNotFoundException {

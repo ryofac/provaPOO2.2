@@ -2,6 +2,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import Exceptions.PostException.PostNotFoundException;
@@ -12,6 +14,14 @@ import Models.Post;
 import Models.Profile;
 import Utils.ConsoleColors;
 import Utils.IOUtils;
+
+// TODO List em ordem de prioridade:
+// TODO: Modularizar app
+// TODO: Adcionar tratamento de exceção mais robusto para leitura/escrita em arquivo
+// TODO: Adicionar mecânica de visualização de menus em stack
+// TODO: Deixar o caminho para os arquivos de persistência relativo e não absoluto dessa forma 
+// TODO: Adcionar um atributo tipo para opções, para decidir quais opções pertencem a um menu pelo tipo delas
+// TODO (zinho) : implementar um login (Semelhante ao feito no patRoBank 2.0)
 
 public class App {
     private SocialNetwork socialNetwork;
@@ -30,17 +40,27 @@ public class App {
 
             """;
 
+    
     private final String PROFILE_PATH = "/home/ryofac/Works/prova2.2/RedeSocial2/provaPOO/livbook/src/data/profiles.txt";
     private final String POST_PATH = "/home/ryofac/Works/prova2.2/RedeSocial2/provaPOO/livbook/src/data/posts.txt";
 
-    // This class is used for menu options
+   /**
+    * Classe utilizada para encapsular a lógica de uma opção do menu
+    */
     private class Option {
-        String title; // Nome que será mostrado
-        Runnable callback; // função que será chamada pela opcao
-
-        Option(String title, Runnable callback) {
+        String title;
+        Runnable callback;
+        Supplier<Boolean> canShow;
+        
+        /**
+         * @param title  nome que que representará a opção
+         * @param callback função que será executada ao chamar a opção
+         * @param canShow função booleana que controla quando essa opção poderá ser exibida
+         */
+        Option(String title, Runnable callback, Supplier<Boolean> canShow) {
             this.title = title;
             this.callback = callback;
+            this.canShow = canShow;
         }
 
         @Override
@@ -50,21 +70,22 @@ public class App {
 
     }
 
-    private Option[] options = {
-            new Option("Create profile", this::includeProfile),
-            new Option("Create Post", this::createPost),
-            new Option("Show Feed", this::showAllPosts),
-            new Option("Show users", this::showAllProfiles),
-            new Option("Search Profile", this::searchProfile),
-            new Option("Search Post", this::searchPost),
-            new Option("Like Post", this::likePost),
-            new Option("Dislike Post", this::dislikePost),
-            new Option("Delete Post", this::deletePost),
-            new Option("Delete Profile", this::removeProfile),
-            new Option("Show Popular Advanced Posts", this::showPopularAPosts),
-        };
+    // A criação de um "menu lógico", isto é, um array de opções
+    private List<Option> options = List.of(
+            new Option("Create profile", this::includeProfile, () -> true ),
+            new Option("Create Post", this::createPost, () -> socialNetwork.existsProfiles()),
+            new Option("Show users", this::showAllProfiles, () -> socialNetwork.existsProfiles() ),
+            new Option("Search Profile", this::searchProfile, () -> socialNetwork.existsProfiles() ),
+            new Option("Search Post", this::searchPost, () -> socialNetwork.existsPosts() ),
+            new Option("Show Feed", this::showAllPosts, () -> socialNetwork.existsPosts() ),
+            new Option("Like Post", this::likePost, () -> socialNetwork.existsPosts() ),
+            new Option("Dislike Post", this::dislikePost, () -> socialNetwork.existsPosts() ),
+            new Option("Delete Post", this::deletePost, () -> socialNetwork.existsPosts() ),
+            new Option("Delete Profile", this::removeProfile, () -> socialNetwork.existsPosts() ),
+            new Option("Show Popular Advanced Posts", this::showPopularAPosts, () -> socialNetwork.existsPosts())
+    );
 
-    private void showMenu(Option... options) {
+    private void showMenu(List<Option> options) {
         String title = MENU_TITLE;
         Integer optionNumber = 0;
         System.out.println(title);
@@ -82,7 +103,7 @@ public class App {
             socialNetwork.deletePost(idPost);
             System.out.println("Post deleted!");
         } catch (PostNotFoundException e) {
-            System.out.println("Post not founded!");
+            System.out.println("Post not found!");
         }
     }
 
@@ -104,14 +125,14 @@ public class App {
     private void searchProfile() {
         String searchTerm = IOUtils.getTextNormalized("Enter the search term : [email/username] \n> ");
         try {
-            Profile foundedbyEmail = socialNetwork.findProfileByEmail(searchTerm);
-            System.out.println("Founded: " + foundedbyEmail);
+            Profile foundbyEmail = socialNetwork.findProfileByEmail(searchTerm);
+            System.out.println("Found: " + foundbyEmail);
         } catch (ProfileNotFoundException e) {
             try {
-                Profile foundedbyUsername = socialNetwork.findProfileByName(searchTerm);
-                System.out.println("Founded: " + foundedbyUsername);
+                Profile foundbyUsername = socialNetwork.findProfileByName(searchTerm);
+                System.out.println("Found: " + foundbyUsername);
             } catch (ProfileNotFoundException err) {
-                System.out.println(ConsoleColors.RED + "User not founded!" + ConsoleColors.RESET);
+                IOUtils.showErr("User not found!");
             }
 
         }
@@ -120,8 +141,7 @@ public class App {
 
     private void removeProfile() {
         showAllProfiles();
-        System.out.println(
-                ConsoleColors.RED + "The posts related to that person will be removed too!" + ConsoleColors.RESET);
+        IOUtils.showWarn("The posts related to that person will be removed too!");
         Integer id = IOUtils.getInt("Enter the id: ");
         try{
             socialNetwork.removeProfile(id);
@@ -167,29 +187,29 @@ public class App {
         String name = IOUtils.getTextNormalized("Enter your username: ");
         String email = IOUtils.getTextNormalized("Enter your email: ");
         try {
-            Profile foundedByEmail = socialNetwork.findProfileByEmail(email);
-            Profile foundedByName = socialNetwork.findProfileByName(name);
-            if (foundedByEmail != foundedByName) {
+            Profile foundByEmail = socialNetwork.findProfileByEmail(email);
+            Profile foundByName = socialNetwork.findProfileByName(name);
+            if (foundByEmail != foundByName) {
                 System.out.println(ConsoleColors.RED + "Autentication failed!" + ConsoleColors.RESET);
                 return;
             }
             String text = IOUtils.getText("What do you want to share with world today? >_<\n > ").replace(";", "*");
 
-            List<String> hashtagsFounded = findHashtagInText(text);
-            if (hashtagsFounded.size() > 0)
+            List<String> hashtagsFound = findHashtagInText(text);
+            if (hashtagsFound.size() > 0)
                 System.out.println(ConsoleColors.YELLOW
                         + "Warn: you can only embed hashtags in a advanced post" + ConsoleColors.RESET);
             Boolean isAdvanced = IOUtils.getChoice("Do you want to turn this into a advanced post? ");
             Post created;
             if (isAdvanced) {
                 Integer remainingViews = IOUtils.getInt("Set the max views: ");
-                created = socialNetwork.createAdvancedPost(text, foundedByEmail, remainingViews);
+                created = socialNetwork.createAdvancedPost(text, foundByEmail, remainingViews);
             } else {
-                created = socialNetwork.createPost(text, foundedByEmail);
+                created = socialNetwork.createPost(text, foundByEmail);
 
             }
             // hashtags vão ser adcionadas a medida que são encontradas no próprio texto
-            for (String hashtag : hashtagsFounded) {
+            for (String hashtag : hashtagsFound) {
                 if (created instanceof AdvancedPost) {
                     ((AdvancedPost) created).addHashtag(hashtag);
                 } else {
@@ -211,22 +231,22 @@ public class App {
         String searchTerm = IOUtils
                 .getTextNormalized("Enter the search parameter: [profile username/phrase/hashtag]\n > ");
         try {
-            Profile userFoundedByName = socialNetwork.findProfileByName(searchTerm);
-            showPostsPerProfile(userFoundedByName);
+            Profile userFoundByName = socialNetwork.findProfileByName(searchTerm);
+            showPostsPerProfile(userFoundByName);
         } catch (ProfileNotFoundException e) {
             System.out.println("Profile not found");
         } catch(PostNotFoundException e){
-            System.out.println("No posts founded by this user");
+            System.out.println("No posts found by this user");
         }
         try {
             showPostsPerText(searchTerm);
         } catch (PostNotFoundException e) {
-            System.out.println("No posts founded by text");
+            System.out.println("No posts found by text");
         }
         try {
             showPostsPerHashtag(searchTerm);
         } catch (PostNotFoundException err) {
-            System.out.println("No posts founded by hashtag");
+            System.out.println("No posts found by hashtag");
         }
     }
 
@@ -235,10 +255,10 @@ public class App {
         Integer idPost = IOUtils.getInt("Enter the post id: ");
         try {
             socialNetwork.likePost(idPost);
-            Post founded = socialNetwork.findPostsbyId(idPost);
-            System.out.println("Post from " + founded.getOwner().getName() + "liked!");
+            Post found = socialNetwork.findPostsbyId(idPost);
+            System.out.println("Post from " + found.getOwner().getName() + "liked!");
         } catch (PostNotFoundException e) {
-            System.out.println("Post not founded!");
+            System.out.println("Post not found!");
         }
     }
 
@@ -246,35 +266,38 @@ public class App {
         Integer idPost = IOUtils.getInt("Enter the post id: ");
         try {
             socialNetwork.dislikePost(idPost);
-            Post founded = socialNetwork.findPostsbyId(idPost);
+            Post found = socialNetwork.findPostsbyId(idPost);
             System.out.println("Post disliked!");
-            System.out.println("Post from " + founded.getOwner().getName() + "disliked!");
+            System.out.println("Post from " + found.getOwner().getName() + "disliked!");
         } catch (PostNotFoundException e) {
-            System.out.println("Post not founded!");
+            System.out.println("Post not found!");
         }
     }
 
     public void run() {
         Integer chosen;
-        readData(PROFILE_PATH, POST_PATH);
+        List<Option> avaliableOptions;
+
+        // readData(PROFILE_PATH, POST_PATH);
+    
         while (true) {
-            showMenu(options);
+            avaliableOptions = options.stream()
+                .filter(option -> option.canShow.get()).collect(Collectors.toList());
+            showMenu(avaliableOptions);
             // Controla a opção escolhida atual: entrada de dados do programa
             try {
                 chosen = IOUtils.getInt("Enter a option: \n> ");
-
-                // verifica se é maior ou menor que o número de conteúdos da lista, senão for,
-                // continua...
-                if (chosen > options.length || chosen < 0) {
+                if (chosen > avaliableOptions.size() || chosen < 0) {
                     System.out.println("Please, digit a valid option number!");
                     continue;
-                }
+                }             
                 if (chosen == 0) { // Opção sair: termina o loop
                     break;
                 }
                 // Escolhe a opção pelo que foi digitado - 1 (o indice real do array)
-                options[chosen - 1].callback.run();
-                saveData(PROFILE_PATH, POST_PATH);
+                avaliableOptions.get(chosen - 1).callback.run();
+                // saveData(PROFILE_PATH, POST_PATH);
+
             } catch (NumberFormatException e) {
                 System.out.println(ConsoleColors.RED + "Enter only numbers, please!" + ConsoleColors.RESET);
             }
@@ -283,7 +306,7 @@ public class App {
 
         }
 
-        IOUtils.closeScanner(); // TODO: Achar um método mais "bonito" de fazer isso"
+        IOUtils.closeScanner(); 
 
     }
     // Usado para formatar os posts no formato adequado
@@ -321,7 +344,6 @@ public class App {
 
     public void showPopularAPosts() {
         System.out.println("====== Popular Advanced Posts: =======");
-        // TODO: Método getAdvancedPosts in SocialNetwork
         for (Post post : socialNetwork.getAllPosts()) {
             if (post instanceof AdvancedPost && post.isPopular()) {
                 System.out.println(formatPost(post));
@@ -331,7 +353,6 @@ public class App {
     }
 
     public void showAllProfiles() {
-        // TODO: Método getAllProfiles in SocialNetwork
         System.out.println("================ PROFILES ===============");
         for (Profile profile : socialNetwork.getAllProfiles()) {
             System.out.println(formatProfile(profile));
@@ -339,25 +360,25 @@ public class App {
     }
 
     public void showPostsPerProfile(Profile owner) throws PostNotFoundException {
-        List<Post> postsFounded = socialNetwork.findPostsbyOwner(owner);
-        System.out.println("==== Founded by Profile: ====");
-        for (Post actualPost : postsFounded) {
+        List<Post> postsFound = socialNetwork.findPostsbyOwner(owner);
+        System.out.println("==== Found by Profile: ====");
+        for (Post actualPost : postsFound) {
             System.out.println(formatPost(actualPost));
         }
     }
 
     public void showPostsPerHashtag(String hashtag) throws PostNotFoundException {
-        List<Post> postsFounded = socialNetwork.findPostByHashtag(hashtag);
-        System.out.println("==== Founded by hashtag: ====");
-        for (Post post : postsFounded) {
+        List<Post> postsFound = socialNetwork.findPostByHashtag(hashtag);
+        System.out.println("==== Found by hashtag: ====");
+        for (Post post : postsFound) {
             System.out.println(formatPost(post));
         }
     }
 
     public void showPostsPerText(String text) throws PostNotFoundException {
-        List<Post> postsFoundedByText = socialNetwork.findPostByPhrase(text);
-        System.out.println("===== Founded by text: =====");
-        for (Post post : postsFoundedByText) {
+        List<Post> postsFoundByText = socialNetwork.findPostByPhrase(text);
+        System.out.println("===== Found by text: =====");
+        for (Post post : postsFoundByText) {
             System.out.println(formatPost(post));
         }
     }
@@ -434,7 +455,7 @@ public class App {
                         break;
                 }
             } catch (ProfileNotFoundException e) {
-                System.out.println("ERROR: user founded in file not related to any post");
+                System.out.println("ERROR: user found in file not related to any post");
                 e.printStackTrace();
             }
         });
