@@ -2,6 +2,7 @@ package Repositories;
 
 import java.util.List;
 
+import Exceptions.DBException.DBException;
 import Exceptions.PostException.PostNotFoundException;
 import Models.Post;
 import Models.Profile;
@@ -11,19 +12,21 @@ public interface IPostRepository {
     /**
      * Método que inclui uma instância de Post no repositório de Posts
     */
-    void includePost(Post post);
+    void includePost(Post post) throws DBException;
 
     /**
      * Esse método é utilizado para retornar todos os posts armazenados
      * @return todos os posts criados
+     * @throws DBException 
      */
-    List<Post> getAllPosts();
+    List<Post> getAllPosts() throws DBException;
 
     /**
      * Esse método é um atalho para o método getAllPosts().size()
      * @return a quantidade total de posts armazenados
+     * @throws DBException 
      */
-    Integer getPostAmount();
+    Integer getPostAmount() throws DBException;
     
     /**
      * Esse método é responsável por remover os posts que já expiraram, se existirem

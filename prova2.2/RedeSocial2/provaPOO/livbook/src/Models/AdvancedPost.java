@@ -2,9 +2,10 @@ package Models;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 
 public class AdvancedPost extends Post {
-    ArrayList<String> hashtags = new ArrayList<String>();
+    List<String> hashtags = new ArrayList<String>();
     Integer remainingViews;
 
     public AdvancedPost(Integer _id, String _text, Profile _owner, Integer remainingViews) {
@@ -17,10 +18,10 @@ public class AdvancedPost extends Post {
             LocalDateTime createdDataTime, Integer remainingViews) {
         super(_id, _text, _owner, createdDataTime, likes, dislikes);
         this.remainingViews = remainingViews;
-
+        
     }
 
-    public ArrayList<String> getHashtags() {
+    public List<String> getHashtags() {
         return this.hashtags;
     }
 

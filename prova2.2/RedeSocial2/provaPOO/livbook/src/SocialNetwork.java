@@ -1,5 +1,6 @@
 import java.util.List;
 
+import Exceptions.DBException.DBException;
 import Exceptions.PostException.PostNotFoundException;
 import Exceptions.ProfileException.ProfileAlreadyExistsException;
 import Exceptions.ProfileException.ProfileNotFoundException;
@@ -8,6 +9,8 @@ import Models.Post;
 import Models.Profile;
 import Repositories.IPostRepository;
 import Repositories.IProfileRepository;
+
+// TODO: Resolver as exceptions DBExceptions, fazendo com que esses métodos joguem para o app
 
 public class SocialNetwork {
     private IProfileRepository profileRepository;
@@ -178,7 +181,7 @@ public class SocialNetwork {
 
     }
     
-    public void includePost(Post post) {
+    public void includePost(Post post) throws DBException {
         postRepository.includePost(post);
     }   
 

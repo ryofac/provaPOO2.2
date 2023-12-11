@@ -415,6 +415,9 @@ public class App {
     }
 
 
+
+    // TODO: Fazer com que ao invés de IOException, os métodos relacionados ao arquivo retornem DBException
+    
     // Como vem os dados :
     // Post = TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES
     // AdvancedPost =

@@ -22,9 +22,9 @@ public class DBCom {
             Class.forName(driver);
             con = DriverManager.getConnection(url, user, password);
         } catch (ClassNotFoundException e) {
-            throw new DriverException("Driver não encontrado!");
+            throw new DriverException("Driver não encontrado!", e);
         } catch (SQLException e) {
-            throw new DBException("Erro ao conectar com o banco de dados: " + e.getMessage());
+            throw new DBException("Erro ao conectar com o banco de dados: " + e.getMessage(), e);
         }
     }
 
@@ -32,7 +32,7 @@ public class DBCom {
         try {
             con.close();
         } catch (SQLException e) {
-            throw new DBException("Erro ao fechar conexão com o banco de dados: " + e.getMessage());
+            throw new DBException("Erro ao fechar conexão com o banco de dados: " + e.getMessage(), e);
         }
 
     }
