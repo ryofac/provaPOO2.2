@@ -1,7 +1,8 @@
 {
+    // Isso com o caminho relativo ao diretório raiz do projeto (Livbook)
     "java.project.sourcePaths": ["src"],
     "java.project.outputPath": "bin",
     "java.project.referencedLibraries": [
-        "lib/**/*.jar"
+        "lib/**/*.jar", "lib/*.jar"
     ]
 }

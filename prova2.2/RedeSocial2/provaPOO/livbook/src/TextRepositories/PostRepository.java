@@ -16,13 +16,6 @@ import Repositories.IPostRepository;
 public class PostRepository implements IPostRepository {
     private List<Post> posts = new ArrayList<Post>();
 
-
-    public void deletePost(Post post) throws PostNotFoundException {
-        Post postFound = findPostById(post.getId());
-        posts.remove(postFound);
-    }
-
-
     @Override
     public List<Post> getAllPosts() {
         return posts;

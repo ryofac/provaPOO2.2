@@ -2,6 +2,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -24,6 +25,9 @@ import Utils.IOUtils;
 // TODO (zinho) : implementar um login (Semelhante ao feito no patRoBank 2.0)
 
 public class App {
+
+    Stack<Runnable> viewStack = new Stack<>();
+    
     private SocialNetwork socialNetwork;
 
     public App(SocialNetwork socialNetwork) {
@@ -85,6 +89,8 @@ public class App {
             new Option("Show Popular Advanced Posts", this::showPopularAPosts, () -> socialNetwork.existsPosts())
     );
 
+
+    /* ----- MENUS ------ */
     private void showMenu(List<Option> options) {
         String title = MENU_TITLE; 
         Integer optionNumber = 0;

@@ -93,7 +93,7 @@ public class IOUtils {
         scanner.close();
     }
 
-    // Classe que encapsula a escrita em arquivo passando uma string com o conteúdo
+    // Método que encapsula a escrita em arquivo passando uma string com o conteúdo
     public static File writeOnFile(String filePath, String content) {
         Charset utf8 = Charset.forName("UTF-8");
         try (FileWriter escritor = new FileWriter(filePath, utf8, false)) {
@@ -107,7 +107,7 @@ public class IOUtils {
 
     }
 
-    // Classe que encapsula a leitura das linhas de um arquivo, retornando uma lista
+    // Método que encapsula a leitura das linhas de um arquivo, retornando uma lista
     // de linhas
     public static List<String> readLinesOnFile(String filePath) {
         try {
