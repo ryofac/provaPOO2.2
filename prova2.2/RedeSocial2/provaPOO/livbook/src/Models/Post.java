@@ -68,7 +68,6 @@ public class Post {
     }
 
     // Usado para facilitar a gravação em arquivo:
-
     // TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES
     @Override
     public String toString() {

@@ -17,19 +17,34 @@ public class SocialNetwork {
         this.profileRepository = profileRepository;
         this.postRepository = postRepository;
     }
-
+    /**
+     * Método responsável por retornar todos os perfis dod repositório de perfis
+     * @return todos os perfis disponíveis
+     */
     public List<Profile> getAllProfiles() {
         return profileRepository.getAllProfiles();
     }
 
+    /**
+     * Método responsável por retornar todos os posts do respositório de posts
+     * @return todos os posts disponíveis
+     */
     public List<Post> getAllPosts() {
         return postRepository.getAllPosts();
     }
-
+    
+    /**
+     * Verifica se existem posts
+     * @return true se a quantidade de posts disponível é maior que 0
+     */
     public boolean existsPosts(){
         return postRepository.getPostAmount() > 0;
     }
 
+     /**
+     * Verifica se existem perfis
+     * @return true se a quantidade de perfis disponível é maior que 0
+     */
     public boolean existsProfiles(){
         return profileRepository.getProfileAmount() > 0;
     }
@@ -162,10 +177,7 @@ public class SocialNetwork {
         post.dislike();
 
     }
-
     
-    
-
     public void includePost(Post post) {
         postRepository.includePost(post);
     }   

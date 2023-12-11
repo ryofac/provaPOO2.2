@@ -86,7 +86,7 @@ public class App {
     );
 
     private void showMenu(List<Option> options) {
-        String title = MENU_TITLE;
+        String title = MENU_TITLE; 
         Integer optionNumber = 0;
         System.out.println(title);
         for (Option option : options) {
@@ -116,21 +116,19 @@ public class App {
         } catch (ProfileAlreadyExistsException e) {
             IOUtils.showErr( "CANNOT CREATE USER: " + e.getMessage());
             return;
-        } catch (Exception e) {
-            System.out.println("An Unexpected Error Ocurred: ");
-            e.printStackTrace();
         }
     }
+    
 
     private void searchProfile() {
         String searchTerm = IOUtils.getTextNormalized("Enter the search term : [email/username] \n> ");
         try {
             Profile foundbyEmail = socialNetwork.findProfileByEmail(searchTerm);
-            System.out.println("Found: " + foundbyEmail);
+            System.out.println("Found email:  \n" + formatProfile(foundbyEmail));
         } catch (ProfileNotFoundException e) {
             try {
                 Profile foundbyUsername = socialNetwork.findProfileByName(searchTerm);
-                System.out.println("Found: " + foundbyUsername);
+                System.out.println("Found username: \n" + formatProfile(foundbyUsername));
             } catch (ProfileNotFoundException err) {
                 IOUtils.showErr("User not found!");
             }
@@ -300,10 +298,10 @@ public class App {
 
             } catch (NumberFormatException e) {
                 IOUtils.showWarn("Enter only numbers, please!");
+            }
 
             IOUtils.clearScreen();
 
-        }
     }
         System.out.println("See u soon ! >_<");
         IOUtils.closeScanner(); 
@@ -400,13 +398,6 @@ public class App {
             }
         }
     }
-
-    // public void showPopularHashtags() {
-    //     List<String> hashtags = socialNetwork.();
-    //     for (String hashtag : hashtags) {
-    //         System.out.println(hashtag);
-    //     }
-    // }
 
     public void viewPosts() {
         for (Post post : socialNetwork.getAllPosts()) {
