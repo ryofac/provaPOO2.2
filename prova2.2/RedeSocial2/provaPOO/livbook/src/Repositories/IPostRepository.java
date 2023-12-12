@@ -30,61 +30,56 @@ public interface IPostRepository {
     
     /**
      * Esse método é responsável por remover os posts que já expiraram, se existirem
+     * @throws DBException 
      */
-    void removeSeenPosts();
-    
-    /**
-     * Esse método remove todos os posts assossiados a um usuário especificado
-     * @param profile o perfil assossiado aos posts que devem ser removidos
-     */
-    void removePostsFromUser(Profile profile);
+    void removeSeenPosts() throws DBException;
 
     /**
      * Método que busca e retorna um post baseado no id fornecido
      * @param id o id do post a ser buscado
      * @return o post buscado, se encontrado
      * @throws PostNotFoundException caso o post não exista
+     * @throws DBException 
      */
-    Post findPostById(Integer id) throws PostNotFoundException;
+    Post findPostById(Integer id) throws PostNotFoundException, DBException;
 
     /**
      * Método que busca e retorna um post baseado no seu dono (uma instância da classe perfil)
      * @param owner uma instância da classe Perfil, que representa o dono do post
      * @return Uma lista de posts pertencentes ao dono, se existirem posts
      * @throws PostNotFoundException caso não exista nenhum post assossiado a esse dono
+     * @throws DBException 
      */
-    List<Post> findPostByOwner(Profile owner) throws PostNotFoundException;
+    List<Post> findPostByOwner(Profile owner) throws PostNotFoundException, DBException;
 
     /**
      * Método que busca e retorna um post baseado em uma hashtag presente
      * @param hashtag a string que representa a hashtag a ser buscada
      * @return Uma lista de posts que utilizam a hashtag fornecida, se existirem
      * @throws PostNotFoundException caso não exista nenhum post assossiado a essa hashtag
+     * @throws DBException 
      */
-    List<Post> findPostByHashtag(String hashtag) throws PostNotFoundException;
+    List<Post> findPostByHashtag(String hashtag) throws PostNotFoundException, DBException;
 
-    /**
-     * Método que busca e retorna um post baseado no nome do Perfil do dono
-     * @param searchTerm a string que representa o nome do perfil a ser buscado
-     * @return Uma lista de posts que utilizam a hashtag fornecida, se existirem
-     * @throws PostNotFoundException caso não exista nenhum post assossiado a essa hashtag
-     */
-    List<Post> findPostByProfile(String searchTerm) throws PostNotFoundException;
 
     /**
      * Método que busca e retorna um post baseado em um trecho do texto do post
      * @param searchTerm a string que representa o trecho a buscado
      * @return Uma lista de posts que utiliza do trecho fornecido, se existirem
      * @throws PostNotFoundException caso não exista nenhum post assossiado a esse trecho
+     * @throws DBException 
      */
-    List<Post> findPostByPhrase(String searchTerm) throws PostNotFoundException;
+    List<Post> findPostByPhrase(String searchTerm) throws PostNotFoundException, DBException;
 
     /**
      * Deleta um post fornecido do repositório de posts
      * @param idPost o id do post a ser deletado
      * @throws PostNotFoundException caso não exista nenhum post associado a esse id
+     * @throws DBException 
      */
-    void deletePost(int idPost) throws PostNotFoundException;
+    void deletePost(int idPost) throws PostNotFoundException, DBException;
+
+    public void removePostsFromUser(Profile profile) throws DBException;
 
 
     

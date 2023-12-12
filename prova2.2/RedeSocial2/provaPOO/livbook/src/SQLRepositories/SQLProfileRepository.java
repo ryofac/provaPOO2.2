@@ -24,6 +24,7 @@ public class SQLProfileRepository implements IProfileRepository {
     @Override
     public List<Profile> getAllProfiles() throws DBException {
         try {
+            com.connect();
             List<Profile> allProfiles = new ArrayList<>();
             com.connect();
             PreparedStatement psmt = com.con.prepareStatement(
@@ -65,15 +66,8 @@ public class SQLProfileRepository implements IProfileRepository {
     @Override
     public void removeProfile(Integer profileId) throws ProfileNotFoundException, DBException {
         try{
-            findProfileById(profileId);
-            
             com.connect();
-            // Deletando os posts associados ao perfil
-            PreparedStatement psmt = com.con.prepareStatement(
-            "DELETE FROM POST WHERE OWNERID = ?"
-            );
-            psmt.setInt(1, profileId);
-            psmt.executeUpdate();
+            PreparedStatement psmt;
             // Deletando o perfil
             psmt = com.con.prepareStatement(
                 "DELETE FROM PROFILE WHERE ID = ?"
@@ -165,15 +159,21 @@ public class SQLProfileRepository implements IProfileRepository {
     @Override
     public void addProfile(Profile profile) throws ProfileAlreadyExistsException, DBException {
         try {
-            com.connect();
+            findProfileByName(profile.getName());
+            findProfileByEmail(profile.getEmail());
+            throw new ProfileAlreadyExistsException("Profile already exists");
+        } catch (ProfileNotFoundException e) {
+            try{
             PreparedStatement psmt = com.con.prepareStatement(
-                "INSERT INTO PROFILE (NAME, EMAIL) VALUES (?, ?)"
+                "INSERT INTO PROFILE (ID, NAME, EMAIL) VALUES (?, ?, ?)"
             );
-            psmt.setString(1, profile.getName());
-            psmt.setString(2, profile.getEmail());
+            psmt.setInt(1, profile.getId());
+            psmt.setString(2, profile.getName());
+            psmt.setString(3, profile.getEmail());
             psmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new DBException("ERROR while adding profile", e);
+            } catch (SQLException ex) {
+                throw new DBException("ERROR while adding profile" + ex.getNextException(), ex);
+            }
         } finally {
             com.close();
         }

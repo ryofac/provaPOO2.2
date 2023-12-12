@@ -10,13 +10,15 @@ import Exceptions.DBException.DriverException;
  */
 public class DBCom {
     public Connection con; // Onde a conexão será estabelecida
-    public Statement smt; // Onde as pesquisas vão ser passadas
-    public ResultSet rs; // O resultado obtido pelo smt
     private static String driver = "org.postgresql.Driver"; // Localização do driver
     private static String user = "postgres"; // Usuário do banco de dados
     private static String password = "admin"; // Senha do banco de dados (No meu caso admin)
     private static String url = "jdbc:postgresql://localhost:5432/livbook"; // Localização do banco de dados
 
+    /**
+     * Método responsável por estabelecer a conexão com o banco de dados
+     * @throws DBException
+     */
     public void connect() throws DBException {
         try {
             Class.forName(driver);
@@ -28,7 +30,11 @@ public class DBCom {
         }
     }
 
-    void close() throws DBException{
+    /**
+     * Método responsável por fechar a conexão com o banco de dados
+     * @throws DBException
+     */
+    void close() throws DBException {
         try {
             con.close();
         } catch (SQLException e) {
@@ -36,17 +42,5 @@ public class DBCom {
         }
 
     }
-
-    public static void main(String[] args) {
-        DBCom db = new DBCom();
-        try {
-            db.connect();
-            System.out.println("Conectado!");
-            db.close();
-        } catch (DBException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
 
 }

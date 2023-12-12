@@ -73,17 +73,7 @@ public class PostRepository implements IPostRepository {
     public void includePost(Post post) {
         posts.add(post);
     }
-
-    @Override
-    public List<Post> findPostByProfile(String searchTerm) throws PostNotFoundException {
-        Stream<Post> postsStream = posts.stream();
-        Stream<Post> postsFinded = postsStream.filter(post -> post.getOwner().getName().equals(searchTerm));
-        List<Post> postList = postsFinded.collect(Collectors.toList());
-        if(postList.isEmpty()) throw new PostNotFoundException("Post not found!");
-        return postList;
-
-    }
-
+    
     @Override
     public List<Post> findPostByPhrase(String searchTerm) throws PostNotFoundException {
         Stream<Post> postsStream = posts.stream();

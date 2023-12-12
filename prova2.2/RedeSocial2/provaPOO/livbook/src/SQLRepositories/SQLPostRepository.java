@@ -4,7 +4,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,8 +20,9 @@ import Repositories.IProfileRepository;
 public class SQLPostRepository implements IPostRepository {
     DBCom com;
     IProfileRepository profileRepository;
-    public SQLPostRepository(DBCom com){
+    public SQLPostRepository(DBCom com, IProfileRepository profileRepository){
         this.com = com;
+        this.profileRepository = profileRepository;
     }
 
     @Override
@@ -59,6 +59,7 @@ public class SQLPostRepository implements IPostRepository {
     @Override
     public List<Post> getAllPosts() throws DBException {
         try {
+            com.connect();
             PreparedStatement psmt = com.con.prepareStatement(
                 "SELECT * FROM POST"
             );
@@ -79,12 +80,13 @@ public class SQLPostRepository implements IPostRepository {
                     hashtagsList.stream().forEach(hashtag -> toAdd.addHashtag(hashtag));
                     posts.add(toAdd);
                 } else{
-                    posts.add(new Post(id, text, new Profile(ownerId, null, null), createdTime, likes, dislikes));
+                    posts.add(new Post(id, text, profileRepository.findProfileById(ownerId), createdTime, likes, dislikes));
                 }
             }
             return posts;
             
         } catch (SQLException e) {
+            e.printStackTrace();
             throw new DBException("ERROR while trying to get all posts from database", e);
         } catch (ProfileNotFoundException e){
             throw new DBException("ERROR while trying to get all posts from database", e);
@@ -97,6 +99,7 @@ public class SQLPostRepository implements IPostRepository {
     @Override
     public Integer getPostAmount() throws DBException {
        try{
+            com.connect();
             PreparedStatement psmt = com.con.prepareStatement(
                 "SELECT COUNT(*) FROM POST"
             );
@@ -109,63 +112,209 @@ public class SQLPostRepository implements IPostRepository {
             com.close();
         }
     }
-    
-
-    // TODO: Colocar isso em rede social MOTIVO: Faz parte da regra de negócios
-    @Override
-    public void removeSeenPosts() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'removeSeenPosts'");
-    }
-
-    // Método não mais necessário, pois remover usuário já remove os posts relacionados ao usuário
-    // TODO: Resolver ocorrências desse método
-    @Override
-    public void removePostsFromUser(Profile profile) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'removePostsFromUser'");
-    }
 
     @Override
-    public Post findPostById(Integer id) throws PostNotFoundException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findPostById'");
+    public void removePostsFromUser(Profile profile) throws DBException {
+        try { 
+            com.connect();
+            // Deletando os posts associados ao perfil
+            PreparedStatement psmt = com.con.prepareStatement(
+            "DELETE FROM POST WHERE OWNERID = ?"
+            );
+            psmt.setInt(1, profile.getId());
+            psmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DBException("ERROR while trying to remove posts from user", e);
+        } finally {
+            com.close();
+        }
     }
 
     @Override
-    public List<Post> findPostByOwner(Profile owner) throws PostNotFoundException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findPostByOwner'");
+    public Post findPostById(Integer id) throws PostNotFoundException, DBException {
+        try {
+            com.connect();
+            PreparedStatement psmt = com.con.prepareStatement(
+                "SELECT * FROM POST WHERE ID = ?"
+            );
+            psmt.setInt(1, id);
+            var rs = psmt.executeQuery();
+            if (rs.next()){
+                var text = rs.getString("TEXT");
+                var ownerId = rs.getInt("OWNERID");
+                var createdTime = rs.getTimestamp("CREATEDTIME").toLocalDateTime();
+                var likes = rs.getInt("LIKES");
+                var dislikes = rs.getInt("DISLIKES");
+                var hashtags = rs.getString("HASHTAGS");
+                var remainingViews = rs.getInt("REMAININGVIEWS");
+                if (hashtags != null){
+                    List<String> hashtagsList = Arrays.asList(hashtags.split(","));
+                    AdvancedPost toAdd = new AdvancedPost(id, text, profileRepository.findProfileById(ownerId), likes, dislikes, createdTime, remainingViews);
+                    hashtagsList.stream().forEach(hashtag -> toAdd.addHashtag(hashtag));
+                    return toAdd;
+                } else{
+                    return new Post(id, text, profileRepository.findProfileById(ownerId), createdTime, likes, dislikes);
+                }
+            } else{
+                throw new PostNotFoundException("Post with id " + id + " not found");
+            }
+        } catch (SQLException e) {
+            throw new DBException("Post with id " + id + " not found", e);
+        } catch (ProfileNotFoundException e){
+            throw new PostNotFoundException("Post with id " + id + " not found");
+        } finally {
+            com.close();
+
+        }
     }
 
     @Override
-    public List<Post> findPostByHashtag(String hashtag) throws PostNotFoundException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findPostByHashtag'");
+    public List<Post> findPostByOwner(Profile owner) throws PostNotFoundException, DBException {
+        try {
+            com.connect();
+            PreparedStatement psmt = com.con.prepareStatement(
+                "SELECT * FROM POST WHERE OWNERID = ?"
+            );
+            psmt.setInt(1, owner.getId());
+            var rs = psmt.executeQuery();
+            List<Post> posts = new ArrayList<Post>();
+            while (rs.next()){
+                var id = rs.getInt("ID");
+                var text = rs.getString("TEXT");
+                var ownerId = rs.getInt("OWNERID");
+                var createdTime = rs.getTimestamp("CREATEDTIME").toLocalDateTime();
+                var likes = rs.getInt("LIKES");
+                var dislikes = rs.getInt("DISLIKES");
+                var hashtags = rs.getString("HASHTAGS");
+                var remainingViews = rs.getInt("REMAININGVIEWS");
+                if (hashtags != null){
+                    List<String> hashtagsList = Arrays.asList(hashtags.split(","));
+                    AdvancedPost toAdd = new AdvancedPost(id, text, profileRepository.findProfileById(ownerId), likes, dislikes, createdTime, remainingViews);
+                    hashtagsList.stream().forEach(hashtag -> toAdd.addHashtag(hashtag));
+                    posts.add(toAdd);
+                } else{
+                    posts.add(new Post(id, text, profileRepository.findProfileById(ownerId), createdTime, likes, dislikes));
+                }
+            }
+            return posts;
+        } catch (SQLException e) {
+            throw new PostNotFoundException("Posts from owner " + owner.getId() + " not found");
+        } catch (ProfileNotFoundException e){
+            throw new PostNotFoundException("Posts from owner " + owner.getId() + " not found");
+        } finally {
+            com.close();
+        }
     }
 
     @Override
-    public List<Post> findPostByProfile(String searchTerm) throws PostNotFoundException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findPostByProfile'");
+    public List<Post> findPostByHashtag(String hashtag) throws PostNotFoundException, DBException {
+        try {
+            com.connect();
+            PreparedStatement psmt = com.con.prepareStatement(
+                "SELECT * FROM POST WHERE HASHTAGS LIKE ?"
+            );
+            psmt.setString(1, "%" + hashtag + "%");
+            var rs = psmt.executeQuery();
+            List<Post> posts = new ArrayList<Post>();
+            while (rs.next()){
+                var id = rs.getInt("ID");
+                var text = rs.getString("TEXT");
+                var ownerId = rs.getInt("OWNERID");
+                var createdTime = rs.getTimestamp("CREATEDTIME").toLocalDateTime();
+                var likes = rs.getInt("LIKES");
+                var dislikes = rs.getInt("DISLIKES");
+                var hashtags = rs.getString("HASHTAGS");
+                var remainingViews = rs.getInt("REMAININGVIEWS");
+                if (hashtags != null){
+                    List<String> hashtagsList = Arrays.asList(hashtags.split(","));
+                    AdvancedPost toAdd = new AdvancedPost(id, text, profileRepository.findProfileById(ownerId), likes, dislikes, createdTime, remainingViews);
+                    hashtagsList.stream().forEach(hasht -> toAdd.addHashtag(hasht));
+                    posts.add(toAdd);
+                } else{
+                    posts.add(new Post(id, text, profileRepository.findProfileById(ownerId), createdTime, likes, dislikes));
+                }
+            }
+            return posts;
+        } catch (SQLException e) {
+            throw new PostNotFoundException("Posts with hashtag " + hashtag + " not found");
+        } catch (ProfileNotFoundException e){
+            throw new PostNotFoundException("Posts with hashtag " + hashtag + " not found");
+        } finally {
+            com.close();
+        }
     }
 
     @Override
-    public List<Post> findPostByPhrase(String searchTerm) throws PostNotFoundException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'findPostByPhrase'");
+    public List<Post> findPostByPhrase(String searchTerm) throws PostNotFoundException, DBException {
+        try {
+            com.connect();
+            PreparedStatement psmt = com.con.prepareStatement(
+                "SELECT * FROM POST WHERE TEXT ILIKE '%?%'"
+                );
+            psmt.setString(1, searchTerm);
+            var rs = psmt.executeQuery();
+            List<Post> posts = new ArrayList<Post>();
+            if(!rs.next()) throw new PostNotFoundException("Posts with phrase " + searchTerm + " not found");
+
+            while (rs.next()){
+                var id = rs.getInt("ID");
+                var text = rs.getString("TEXT");
+                var ownerId = rs.getInt("OWNERID");
+                var createdTime = rs.getTimestamp("CREATEDTIME").toLocalDateTime();
+                var likes = rs.getInt("LIKES");
+                var dislikes = rs.getInt("DISLIKES");
+                var hashtags = rs.getString("HASHTAGS");
+                var remainingViews = rs.getInt("REMAININGVIEWS");
+                if (hashtags != null){
+                    List<String> hashtagsList = Arrays.asList(hashtags.split(","));
+                    AdvancedPost toAdd = new AdvancedPost(id, text, profileRepository.findProfileById(ownerId), likes, dislikes, createdTime, remainingViews);
+                    hashtagsList.stream().forEach(hashtag -> toAdd.addHashtag(hashtag));
+                    posts.add(toAdd);
+                } else{
+                    posts.add(new Post(id, text, profileRepository.findProfileById(ownerId), createdTime, likes, dislikes));
+                }
+            }
+            return posts;
+           
+        } catch (SQLException e) {
+            throw new DBException("Posts with phrase " + searchTerm + " not found", e);
+        } catch (ProfileNotFoundException e){
+            throw new PostNotFoundException("Posts with phrase " + searchTerm + " not found");
+        } finally {
+            com.close();
+
+        }
     }
 
     @Override
-    public void deletePost(int idPost) throws PostNotFoundException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'deletePost'");
+    public void deletePost(int idPost) throws PostNotFoundException, DBException {
+       try {
+        com.connect();
+        PreparedStatement psmt = com.con.prepareStatement(
+            "DELETE FROM POST WHERE ID = ?"
+        );
+        psmt.setInt(1, idPost);
+        psmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new PostNotFoundException("Post with id " + idPost + " not found");
+        } finally {
+            com.close();
+       }
     }
 
-    // Main para testes
-    public static void main(String[] args) throws DBException {
-        var repo = new SQLPostRepository(new DBCom());
-        repo.includePost(new Post(1, "Eu amo java", new Profile(1, "robson", "ryan@gmail"), LocalDateTime.now(), 10, 10));
+    @Override
+    public void removeSeenPosts() throws DBException {
+        com.connect();
+        try {
+            PreparedStatement psmt = com.con.prepareStatement(
+                "DELETE FROM POST WHERE REMAININGVIEWS <= 0"
+            );
+            psmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new DBException("Error while trying to delete posts viewed", e);
+        } finally {
+            com.close();
+        }
     }
     
 }
