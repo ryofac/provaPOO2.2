@@ -1,5 +1,6 @@
 package TextRepositories;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -8,14 +9,23 @@ import java.util.stream.Stream;
 
 import Exceptions.DBException.DBException;
 import Exceptions.PostException.PostNotFoundException;
+import Exceptions.ProfileException.ProfileNotFoundException;
 import Models.AdvancedPost;
 import Models.Post;
 import Models.Profile;
 import Repositories.IPostRepository;
+import Repositories.IProfileRepository;
+import Utils.IOUtils;
 
 
 public class PostRepository implements IPostRepository {
     private List<Post> posts = new ArrayList<Post>();
+    IProfileRepository profileRepository;
+
+    public PostRepository(IProfileRepository profileRepository){
+        this.profileRepository = profileRepository;
+        loadPostsfromFile("src/data/posts.txt");
+    }
 
     @Override
     public List<Post> getAllPosts() {
@@ -110,6 +120,50 @@ public class PostRepository implements IPostRepository {
             ((AdvancedPost) found).decrementViews();
             return;
         }
+    }
+
+    public void loadPostsfromFile(String filepath) {
+        // Formato em que os dados são lidos:
+        // Post = TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES
+        // AdvancedPost = TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES;REAMAININGVIEWS;HASHTAGS
+        List<String> lines = IOUtils.readLinesOnFile(filepath);
+        Stream<String> linesStream = lines.stream();
+        linesStream.forEach(line -> {
+            String[] data = line.split(";");
+            try {
+                switch (data[0]) {
+                    case "P":
+                        // incluindo o post segundo os dados do arquivo
+                        includePost(
+                                new Post(Integer.parseInt(data[1]), data[2],
+                                        profileRepository.findProfileById(Integer.parseInt(data[3])), LocalDateTime.parse(data[4]),
+                                        Integer.parseInt(data[5]), Integer.parseInt(data[6])));
+                        break;
+
+                    case "AP":
+                        // Criando o post a ser adicionado
+                        AdvancedPost toBeAdded = new AdvancedPost(Integer.parseInt(data[1]), data[2],
+                                profileRepository.findProfileById(Integer.parseInt(data[3])), Integer.parseInt(data[5]),
+                                Integer.parseInt(data[6]), LocalDateTime.parse(data[4]), Integer.parseInt(data[7]));
+
+                        // Pegando só as hashtags do arquivo
+                        String[] hashtags = data[8].split("-");
+
+                        // Adcionando as hashtags do arquivo ao perfil
+                        for (String hashtag : hashtags) {
+                            toBeAdded.addHashtag(hashtag);
+                        }
+                        includePost(toBeAdded);
+                        break;
+                }
+            } catch (ProfileNotFoundException e) {
+                System.out.println("DB ERROR: user found in file not related to any post");
+            } catch (NumberFormatException e) {
+               System.out.println("DB ERROR: invalid data in file");
+            } catch (DBException e) {
+                System.out.println("DB ERROR: " + e.getMessage());
+            }
+        });
     }
     
 }

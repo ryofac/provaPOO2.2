@@ -83,7 +83,7 @@ public class IOUtils {
     static public void clearScreen(){
        System.out.println("<Enter....>");
         scanner.next();
-        System.out.println("\n".repeat(20));
+        System.out.println("\n".repeat(30));
     }
 
     // Fecha o scanner para as operações de entrada e saída da classe

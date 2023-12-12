@@ -10,7 +10,6 @@ import Models.Profile;
 import Repositories.IPostRepository;
 import Repositories.IProfileRepository;
 
-// TODO: Resolver as exceptions DBExceptions, fazendo com que esses métodos joguem para o app
 
 public class SocialNetwork {
     private IProfileRepository profileRepository;
@@ -20,7 +19,7 @@ public class SocialNetwork {
         this.profileRepository = profileRepository;
         this.postRepository = postRepository;
     }
-    /**
+    /**s
      * Método responsável por retornar todos os perfis dod repositório de perfis
      * @return todos os perfis disponíveis
      * @throws DBException 
@@ -162,7 +161,7 @@ public class SocialNetwork {
         }
         
     }
-
+    
     public Profile findProfileById(Integer id) throws ProfileNotFoundException, DBException {
         var foundProfile = profileRepository.findProfileById(id);
         return foundProfile;
@@ -236,8 +235,5 @@ public class SocialNetwork {
     public void removeSeenPosts() throws DBException{
        postRepository.removeSeenPosts();
     }
-
-    
-
     
 }

@@ -13,7 +13,7 @@ public class AdvancedPost extends Post {
         this.remainingViews = remainingViews;
 
     }
-
+    
     public AdvancedPost(Integer _id, String _text, Profile _owner, Integer likes, Integer dislikes,
             LocalDateTime createdDataTime, Integer remainingViews) {
         super(_id, _text, _owner, createdDataTime, likes, dislikes);

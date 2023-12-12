@@ -1,4 +1,3 @@
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -6,7 +5,6 @@ import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import Exceptions.DBException.DBException;
 import Exceptions.PostException.PostNotFoundException;
@@ -42,8 +40,8 @@ public class App {
             """;
 
     
-    private final String PROFILE_PATH = "/home/ryofac/Works/prova2.2/RedeSocial2/provaPOO/livbook/src/data/profiles.txt";
-    private final String POST_PATH = "/home/ryofac/Works/prova2.2/RedeSocial2/provaPOO/livbook/src/data/posts.txt";
+    private final String PROFILE_PATH = System.getProperty("user.dir") + "/src/data/profiles.txt";
+    private final String POST_PATH = System.getProperty("user.dir") + "/src/data/posts.txt";
 
    /**
     * Classe utilizada para encapsular a lógica de uma opção do menu
@@ -54,7 +52,7 @@ public class App {
         Supplier<Boolean> canShow;
         
         /**
-         * @param title  nome que que representará a opção
+         * @param title nome que que representará a opção
          * @param callback função que será executada ao chamar a opção
          * @param canShow função booleana que controla quando essa opção poderá ser exibida
          */
@@ -87,6 +85,7 @@ public class App {
     );
 
     // ----------------- Funções de implementação da camada de negócios --------------------
+    
     private void deletePost() {
         showAllPosts();
         Integer idPost = IOUtils.getInt("Enter the post id: ");
@@ -111,7 +110,6 @@ public class App {
             return;
         } catch (DBException e){
             IOUtils.showErr("DB ERROR: " + e.getMessage());
-            e.printStackTrace();
             return;
         }
     }
@@ -438,73 +436,6 @@ public class App {
     }
 
     // ----------------- Funções de persistência em Arquivo --------------------    
-    public void loadPostsfromFile(String filepath) {
-        // Formato em que os dados são lidos:
-        // Post = TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES
-        // AdvancedPost = TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES;REAMAININGVIEWS;HASHTAGS
-        List<String> lines = IOUtils.readLinesOnFile(filepath);
-        Stream<String> linesStream = lines.stream();
-        linesStream.forEach(line -> {
-            String[] data = line.split(";");
-            try {
-                switch (data[0]) {
-                    case "P":
-                        // incluindo o post segundo os dados do arquivo
-                        socialNetwork.
-                        includePost(
-                                new Post(Integer.parseInt(data[1]), data[2],
-                                        socialNetwork.findProfileById(Integer.parseInt(data[3])), LocalDateTime.parse(data[4]),
-                                        Integer.parseInt(data[5]), Integer.parseInt(data[6])));
-                        break;
-
-                    case "AP":
-                        // Criando o post a ser adicionado
-                        AdvancedPost toBeAdded = new AdvancedPost(Integer.parseInt(data[1]), data[2],
-                                socialNetwork.findProfileById(Integer.parseInt(data[3])), Integer.parseInt(data[5]),
-                                Integer.parseInt(data[6]), LocalDateTime.parse(data[4]), Integer.parseInt(data[7]));
-
-                        // Pegando só as hashtags do arquivo
-                        String[] hashtags = data[8].split("-");
-
-                        // Adcionando as hashtags do arquivo ao perfil
-                        for (String hashtag : hashtags) {
-                            toBeAdded.addHashtag(hashtag);
-                        }
-                        socialNetwork.includePost(toBeAdded);
-                        break;
-                }
-            } catch (ProfileNotFoundException e) {
-                System.out.println("DB ERROR: user found in file not related to any post");
-                e.printStackTrace();
-            } catch (NumberFormatException e) {
-               System.out.println("DB ERROR: invalid data in file");
-            } catch (DBException e) {
-                System.out.println("DB ERROR: " + e.getMessage());
-            }
-        });
-    }
-
-  
-    public void loadProfilesFromFile(String filepath) {
-          // Formato em que os dados são lidos para cada perfil: id;name;email
-        List<String> lines = IOUtils.readLinesOnFile(filepath);
-        Stream<String> linesStream = lines.stream();
-        linesStream.forEach(line -> {
-            String[] data = line.split(";");
-            try {
-                socialNetwork.includeProfile(new Profile(Integer.parseInt(data[0]), data[1], data[2]));
-
-            } catch (ProfileAlreadyExistsException e) {
-                System.err.println("DB ERROR: Conflict with existing user in memory and in file");
-                e.printStackTrace();
-            } catch (NumberFormatException e) {
-                System.out.println(filepath + " : invalid data in file");
-            } catch (DBException e) {
-                System.out.println("DB ERROR: " + e.getMessage());
-            }
-        });
-
-    }
 
     public void writeProfilesinFile(String filepath) {
         try {
@@ -540,10 +471,6 @@ public class App {
 
     }
 
-    public void readData(String profilePath, String postPath) throws DBException {
-        loadProfilesFromFile(profilePath);
-        loadPostsfromFile(postPath);
-    }
     /* ======================= Menus ====================== */
 
     private void showMenu(List<Option> options) {
@@ -575,26 +502,39 @@ public class App {
         avaliableOptions.get(chosen - 1).callback.run();
     }
 
+    
+    private void saveMenu(){
+        Boolean choice = IOUtils.getChoice("Do you want to save the data to file? ");
+            if(choice)
+                saveData(PROFILE_PATH, POST_PATH);
+        viewStack.pop();
+       
+
+    }
+
 
     // ----------------- Função principal --------------------
     public void run() {
-        // Colocando o menu principal no topo da pilha de vizualizaão
+        // Colocando o menu principal no topo da pilha de visualização
+        viewStack.push(this::saveMenu);
         viewStack.push(this::mainMenu);
 
         // Loop principal do programa
         while (!viewStack.isEmpty()) {
             try{
                 viewStack.peek().run();
-                 IOUtils.clearScreen();
+                IOUtils.clearScreen();
             } catch (NumberFormatException e) {
                 IOUtils.showWarn("Enter only numbers, please!");
+                IOUtils.clearScreen();
             } catch (NoSuchElementException e){
                 IOUtils.showErr("Action canceled by user!");
                 viewStack.pop();
             }
+           
         }
 
-        System.out.println("See u soon ! >_<");
+        System.out.println("See u soon ! >_<" + "\n".repeat(10));
         IOUtils.closeScanner();
 
     }

@@ -16,10 +16,10 @@ public class Main {
         IPostRepository postRepository = new SQLPostRepository(DBCom, profileRepository);
 
         // Repositórios que só trabalham com os arrays
-        IPostRepository postRepositoryL = new PostRepository();
         IProfileRepository profileRepositoryL = new ProfileRepository();
+        IPostRepository postRepositoryL = new PostRepository(profileRepositoryL);
         
-        SocialNetwork socialNetwork = new SocialNetwork(profileRepository, postRepository);
+        SocialNetwork socialNetwork = new SocialNetwork(profileRepositoryL, postRepositoryL);
         App app = new App(socialNetwork);
         app.run();
     }
