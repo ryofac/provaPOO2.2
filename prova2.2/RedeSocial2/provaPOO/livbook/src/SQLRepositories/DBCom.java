@@ -6,7 +6,7 @@ import Exceptions.DBException.DBException;
 import Exceptions.DBException.DriverException;
 
 /**
- * Classe responsável por realizar a comunicação com o banco de dados via JDBC
+ * Classe responsável por realizar a comunicação com o banco de dados Postgres via JDBC
  */
 public class DBCom {
     public Connection con; // Onde a conexão será estabelecida

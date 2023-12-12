@@ -86,10 +86,9 @@ public class SQLPostRepository implements IPostRepository {
             return posts;
             
         } catch (SQLException e) {
-            e.printStackTrace();
-            throw new DBException("ERROR while trying to get all posts from database", e);
+            throw new DBException("ERROR while trying to get all posts from database: " + e.getCause(), e);
         } catch (ProfileNotFoundException e){
-            throw new DBException("ERROR while trying to get all posts from database", e);
+            throw new DBException("ERROR while trying to get all posts from database" + e.getCause(), e);
         } finally {
             com.close();
         }
@@ -312,6 +311,54 @@ public class SQLPostRepository implements IPostRepository {
             psmt.executeUpdate();
         } catch (SQLException e) {
             throw new DBException("Error while trying to delete posts viewed", e);
+        } finally {
+            com.close();
+        }
+    }
+
+    @Override
+    public void addLike(int idPost) throws PostNotFoundException, DBException {
+        try{
+            com.connect();
+            PreparedStatement psmt = com.con.prepareStatement(
+                "UPDATE POST SET LIKES = LIKES + 1 WHERE ID = ?"
+            );
+            psmt.setInt(1, idPost);
+            psmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new PostNotFoundException("Post with id " + idPost + " not found");
+        } finally {
+            com.close();
+        }
+    }
+
+    @Override
+    public void addDisklike(int idPost) throws PostNotFoundException, DBException {
+        try {
+            com.connect();
+            PreparedStatement psmt = com.con.prepareStatement(
+                "UPDATE POST SET DISLIKES = DISLIKES + 1 WHERE ID = ?"
+            );
+            psmt.setInt(1, idPost);
+            psmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new PostNotFoundException("Post with id " + idPost + " not found");
+        } finally {
+            com.close();
+        }
+    }
+
+    @Override
+    public void decrementViews(int idPost) throws PostNotFoundException, DBException {
+        try {
+            com.connect();
+            PreparedStatement psmt = com.con.prepareStatement(
+                "UPDATE POST SET REMAININGVIEWS = REMAININGVIEWS - 1 WHERE ID = ?"
+            );
+            psmt.setInt(1, idPost);
+            psmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new PostNotFoundException("Post with id " + idPost + " not found");
         } finally {
             com.close();
         }

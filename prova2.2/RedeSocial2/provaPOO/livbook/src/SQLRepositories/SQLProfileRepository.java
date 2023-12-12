@@ -40,7 +40,7 @@ public class SQLProfileRepository implements IProfileRepository {
             }
             return allProfiles;
         } catch (SQLException e) {
-            throw new DBException("ERROR while getting all profiles", e);
+            throw new DBException("ERROR while getting all profiles: " + e.getCause(), e);
         } finally {
             com.close();
         }
@@ -57,7 +57,7 @@ public class SQLProfileRepository implements IProfileRepository {
             rs.next();
             return rs.getInt(1);
         } catch (SQLException e) {
-            throw new DBException("ERROR while getting profile amount", e);
+            throw new DBException("ERROR while getting profile amount: " + e.getCause(), e);
         } finally {
             com.close();
         }
@@ -75,7 +75,7 @@ public class SQLProfileRepository implements IProfileRepository {
             psmt.setInt(1, profileId);
             psmt.executeUpdate();
         } catch (SQLException e) {
-            throw new DBException("ERROR while removing profile", e);
+            throw new DBException("ERROR while removing profile: " + e.getCause(), e);
         } finally {
             com.close();
         }
@@ -100,7 +100,7 @@ public class SQLProfileRepository implements IProfileRepository {
                 throw new ProfileNotFoundException("Profile with id " + id + " not found");
             }
         } catch (SQLException e) {
-            throw new DBException("ERROR while finding profile by id", e);
+            throw new DBException("ERROR while finding profile by id: " +e.getCause(), e);
         } finally {
             com.close();
        }
@@ -125,7 +125,7 @@ public class SQLProfileRepository implements IProfileRepository {
                 throw new ProfileNotFoundException("Profile with name " + name + " not found");
             }
        } catch(SQLException e){
-            throw new DBException("ERROR while finding profile by name", e);
+            throw new DBException("ERROR while finding profile by name: " + e.getCause(), e);
         } finally {
             com.close();
        }
@@ -150,7 +150,7 @@ public class SQLProfileRepository implements IProfileRepository {
                 throw new ProfileNotFoundException("Profile with email " + email + " not found");
             }
         } catch (SQLException e) {
-            throw new DBException("ERROR while finding profile by email", e);
+            throw new DBException("ERROR while finding profile by email" + e.getCause(), e);
         } finally {
             com.close();
         }
@@ -158,12 +158,8 @@ public class SQLProfileRepository implements IProfileRepository {
 
     @Override
     public void addProfile(Profile profile) throws ProfileAlreadyExistsException, DBException {
-        try {
-            findProfileByName(profile.getName());
-            findProfileByEmail(profile.getEmail());
-            throw new ProfileAlreadyExistsException("Profile already exists");
-        } catch (ProfileNotFoundException e) {
-            try{
+        try{
+            com.connect();
             PreparedStatement psmt = com.con.prepareStatement(
                 "INSERT INTO PROFILE (ID, NAME, EMAIL) VALUES (?, ?, ?)"
             );
@@ -171,11 +167,10 @@ public class SQLProfileRepository implements IProfileRepository {
             psmt.setString(2, profile.getName());
             psmt.setString(3, profile.getEmail());
             psmt.executeUpdate();
-            } catch (SQLException ex) {
-                throw new DBException("ERROR while adding profile" + ex.getNextException(), ex);
-            }
+        } catch (SQLException ex) {
+            throw new DBException("ERROR while adding profile" + ex.getCause(), ex);
         } finally {
-            com.close();
+        com.close();
         }
     }
     

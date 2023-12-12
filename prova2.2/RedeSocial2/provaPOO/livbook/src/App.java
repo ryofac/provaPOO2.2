@@ -2,6 +2,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -18,10 +19,6 @@ import Utils.ConsoleColors;
 import Utils.IOUtils;
 
 // TODO List em ordem de prioridade:
-// DESCOBRIR como lidar com o removeSeenPosts e o decrementViews entre a rede social e os repositórios
-//  Problema: Não sei onde deixar eles, ao mesmo tempo que são métodos da rede social, eles são métodos dos repositórios, precisam de querys
-    // - ryan
-// Implementar novamente os métodos de like, deslike
 // DESCOBRIR como lidar com as exceptions do banco de dados de uma forma melhor
 
 public class App {
@@ -89,39 +86,9 @@ public class App {
             new Option("Show Popular Advanced Posts", this::showPopularAPosts, () -> socialNetwork.existsPosts())
     );
 
-
-    /* ----- MENUS ------ */
-    private void showMenu(List<Option> options) {
-        String title = MENU_TITLE; 
-        Integer optionNumber = 0;
-        System.out.println(title);
-        for (Option option : options) {
-            System.out.println(ConsoleColors.YELLOW_BRIGHT + "+> " + ConsoleColors.GREEN + ++optionNumber + "-" + option
-                    + ConsoleColors.RESET);
-        }
-        System.out.println(String.format(ConsoleColors.RED_BRIGHT + "+> %d - %s", 0, "Exit" + ConsoleColors.RESET));
-    }
-
-    private void mainMenu() throws NumberFormatException {
-        List<Option> avaliableOptions = options.stream()
-                .filter(option -> option.canShow.get()).collect(Collectors.toList());
-        showMenu(avaliableOptions);
-        int chosen = IOUtils.getInt("Enter a option: \n> ");
-        if (chosen > avaliableOptions.size() || chosen < 0) {
-            System.out.println("Please, digit a valid option number!");
-            return;
-        }             
-        if (chosen == 0) { // Opção sair: termina o loop
-            viewStack.pop();
-            return;
-        }
-
-        // Escolhe a opção pelo que foi digitado - 1 (o indice real do array)
-        avaliableOptions.get(chosen - 1).callback.run();
-    }
-
-
+    // ----------------- Funções de implementação da camada de negócios --------------------
     private void deletePost() {
+        showAllPosts();
         Integer idPost = IOUtils.getInt("Enter the post id: ");
         try {
             socialNetwork.deletePost(idPost);
@@ -129,7 +96,7 @@ public class App {
         } catch (PostNotFoundException e) {
             System.out.println("Post not found!");
         } catch (DBException e){
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
         }
     }
 
@@ -143,7 +110,7 @@ public class App {
             IOUtils.showErr( "CANNOT CREATE USER: " + e.getMessage());
             return;
         } catch (DBException e){
-            IOUtils.showErr("ERROR: " + e.getMessage());
+            IOUtils.showErr("DB ERROR: " + e.getMessage());
             e.printStackTrace();
             return;
         }
@@ -162,11 +129,11 @@ public class App {
             } catch (ProfileNotFoundException err) {
                 IOUtils.showErr("User not found!");
             } catch (DBException ex){
-                IOUtils.showErr("ERROR: " + ex.getMessage());
+                IOUtils.showErr("DB ERROR: " + ex.getMessage());
             }
 
         } catch (DBException e) {
-            IOUtils.showErr("ERROR: " + e.getMessage());
+            IOUtils.showErr("DB ERROR: " + e.getMessage());
         }
 
     }
@@ -181,28 +148,12 @@ public class App {
         } catch(ProfileNotFoundException e){
             System.out.println("A profile with this id doesn't exist!");
         } catch (DBException e){
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
             e.printStackTrace();
         }
        
     }
 
-    private void showAllPosts() {
-        try{
-            System.out.println("-=-=-=-=-=- FEED =-=-=-=-=-=-= ");
-            viewPosts();
-            for (Post post : socialNetwork.getAllPosts()) {
-                System.out.println(formatPost(post));
-            }
-            socialNetwork.removeSeenPosts();
-        System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-
-        } catch (DBException e){
-            System.out.println("ERROR: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
-    }
 
     // Função acessória para achar hashtags diretamente o texto
     private List<String> findHashtagInText(String text) {
@@ -269,7 +220,7 @@ public class App {
         } catch (ProfileNotFoundException e) {
             System.out.println(e.getMessage());
         } catch (DBException e) {
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
         }
     }
 
@@ -284,7 +235,7 @@ public class App {
         } catch(PostNotFoundException e){
             System.out.println("No posts found by this user");
         } catch (DBException e) {
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
         }
         try {
             showPostsPerText(searchTerm);
@@ -308,7 +259,7 @@ public class App {
         } catch (PostNotFoundException e) {
             System.out.println("Post not found!");
         } catch (DBException e) {
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
         }
     }
 
@@ -322,28 +273,11 @@ public class App {
         } catch (PostNotFoundException e) {
             System.out.println("Post not found!");
         } catch (DBException e){
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
         }
     }
 
-    public void run() {
-        viewStack.push(this::mainMenu);
-        // readData(PROFILE_PATH, POST_PATH);
-    
-        while (!viewStack.isEmpty()) {
-            try{
-                viewStack.peek().run();
-            } catch (NumberFormatException e) {
-                IOUtils.showWarn("Enter only numbers, please!");
-            }
-
-            IOUtils.clearScreen();
-
-    }
-        System.out.println("See u soon ! >_<");
-        IOUtils.closeScanner(); 
-
-    }
+    // ----------------- Funções de vizualização --------------------
     // Usado para formatar os posts no formato adequado
     public String formatPost(Post post) {
         String postText = post.getText();
@@ -387,7 +321,7 @@ public class App {
         }
         viewPosts();
         } catch (DBException e){
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
         }
         
     }
@@ -399,7 +333,7 @@ public class App {
                 System.out.println(formatProfile(profile));
             }
         } catch (DBException e){
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
         }
 
         
@@ -416,7 +350,7 @@ public class App {
         } catch (PostNotFoundException e) {
             System.out.println("No posts found by this user");
         } catch (DBException e) {
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
         }
     }
 
@@ -428,7 +362,7 @@ public class App {
             System.out.println("Posts not found by this hashtag");
             return;
         } catch (DBException e) {
-           System.out.println("ERROR: " + e.getMessage());
+           System.out.println("DB ERROR: " + e.getMessage());
            return;
         }
         System.out.println("==== Found by hashtag: ====");
@@ -445,13 +379,29 @@ public class App {
            System.out.println("Posts not found by this text");
            return;
         } catch (DBException e) {
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
             return;
         }
         System.out.println("===== Found by text: =====");
         for (Post post : postsFoundByText) {
             System.out.println(formatPost(post));
         }
+    }
+     private void showAllPosts() {
+        try{
+            System.out.println("-=-=-=-=-=- FEED =-=-=-=-=-=-= ");
+            viewPosts();
+            for (Post post : socialNetwork.getAllPosts()) {
+                System.out.println(formatPost(post));
+            }
+            socialNetwork.removeSeenPosts();
+        System.out.println("-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+
+        } catch (DBException e){
+            System.out.println("DB ERROR: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
     }
 
   
@@ -473,23 +423,25 @@ public class App {
     }
 
     public void viewPosts() throws DBException {
-        for (Post post : socialNetwork.getAllPosts()) {
-            if (post instanceof AdvancedPost) {
-                ((AdvancedPost) post).decrementViews();
-            }
+        try{
+            for (Post post : socialNetwork.getAllPosts()) {
+                if (post instanceof AdvancedPost) {
+                    socialNetwork.seePost(post.getId());
+                }
         }
+
+        }catch (PostNotFoundException e){
+            System.out.println("ERROR: Tried to see a post that doesn't exist");
+        }
+        
 
     }
 
-
-
-    // TODO: Fazer com que ao invés de IOException, os métodos relacionados ao arquivo retornem DBException
-    
-    // Como vem os dados :
-    // Post = TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES
-    // AdvancedPost =
-    // TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES;REAMAININGVIEWS;HASHTAGS
-    public void loadPostsfromFile(String filepath) throws DBException {
+    // ----------------- Funções de persistência em Arquivo --------------------    
+    public void loadPostsfromFile(String filepath) {
+        // Formato em que os dados são lidos:
+        // Post = TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES
+        // AdvancedPost = TIPO;ID;TEXTO;IDODONO;TIME;LIKES;DISLIKES;REAMAININGVIEWS;HASHTAGS
         List<String> lines = IOUtils.readLinesOnFile(filepath);
         Stream<String> linesStream = lines.stream();
         linesStream.forEach(line -> {
@@ -522,18 +474,19 @@ public class App {
                         break;
                 }
             } catch (ProfileNotFoundException e) {
-                System.out.println("ERROR: user found in file not related to any post");
+                System.out.println("DB ERROR: user found in file not related to any post");
                 e.printStackTrace();
             } catch (NumberFormatException e) {
-               System.out.println("ERROR: invalid data in file");
+               System.out.println("DB ERROR: invalid data in file");
             } catch (DBException e) {
-                System.out.println("ERROR: " + e.getMessage());
+                System.out.println("DB ERROR: " + e.getMessage());
             }
         });
     }
 
-    // Como vem os dados: id;name;email
+  
     public void loadProfilesFromFile(String filepath) {
+          // Formato em que os dados são lidos para cada perfil: id;name;email
         List<String> lines = IOUtils.readLinesOnFile(filepath);
         Stream<String> linesStream = lines.stream();
         linesStream.forEach(line -> {
@@ -542,18 +495,17 @@ public class App {
                 socialNetwork.includeProfile(new Profile(Integer.parseInt(data[0]), data[1], data[2]));
 
             } catch (ProfileAlreadyExistsException e) {
-                System.err.println("ERROR: Conflict with existing user in memory and in file");
+                System.err.println("DB ERROR: Conflict with existing user in memory and in file");
                 e.printStackTrace();
             } catch (NumberFormatException e) {
                 System.out.println(filepath + " : invalid data in file");
             } catch (DBException e) {
-                System.out.println("ERROR: " + e.getMessage());
+                System.out.println("DB ERROR: " + e.getMessage());
             }
         });
 
     }
 
-    // Persitência de dados em arquivos de texto: 
     public void writeProfilesinFile(String filepath) {
         try {
             StringBuilder str = new StringBuilder();
@@ -563,7 +515,7 @@ public class App {
         IOUtils.writeOnFile(filepath, str.toString());
 
         } catch (DBException e){
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
             System.out.println("Data not saved!");
         }
         
@@ -577,7 +529,7 @@ public class App {
             }
             IOUtils.writeOnFile(filepath, str.toString());
         } catch (DBException e) {
-            System.out.println("ERROR: " + e.getMessage());
+            System.out.println("DB ERROR: " + e.getMessage());
             System.out.println("Data not saved!");
         }
     }
@@ -591,6 +543,60 @@ public class App {
     public void readData(String profilePath, String postPath) throws DBException {
         loadProfilesFromFile(profilePath);
         loadPostsfromFile(postPath);
+    }
+    /* ======================= Menus ====================== */
+
+    private void showMenu(List<Option> options) {
+        String title = MENU_TITLE; 
+        Integer optionNumber = 0;
+        System.out.println(title);
+        for (Option option : options) {
+            System.out.println(ConsoleColors.YELLOW_BRIGHT + "+> " + ConsoleColors.GREEN + ++optionNumber + "-" + option
+                    + ConsoleColors.RESET);
+        }
+        System.out.println(String.format(ConsoleColors.RED_BRIGHT + "+> %d - %s", 0, "Exit" + ConsoleColors.RESET));
+    }
+
+    private void mainMenu() throws NumberFormatException, NoSuchElementException {
+        List<Option> avaliableOptions = options.stream()
+                .filter(option -> option.canShow.get()).collect(Collectors.toList());
+        showMenu(avaliableOptions);
+        int chosen = IOUtils.getInt("Enter a option: \n> ");
+        if (chosen > avaliableOptions.size() || chosen < 0) {
+            System.out.println("Please, digit a valid option number!");
+            return;
+        }             
+        if (chosen == 0) { // Opção sair: termina o loop
+            viewStack.pop();
+            return;
+        }
+
+        // Escolhe a opção pelo que foi digitado - 1 (o indice real do array)
+        avaliableOptions.get(chosen - 1).callback.run();
+    }
+
+
+    // ----------------- Função principal --------------------
+    public void run() {
+        // Colocando o menu principal no topo da pilha de vizualizaão
+        viewStack.push(this::mainMenu);
+
+        // Loop principal do programa
+        while (!viewStack.isEmpty()) {
+            try{
+                viewStack.peek().run();
+                 IOUtils.clearScreen();
+            } catch (NumberFormatException e) {
+                IOUtils.showWarn("Enter only numbers, please!");
+            } catch (NoSuchElementException e){
+                IOUtils.showErr("Action canceled by user!");
+                viewStack.pop();
+            }
+        }
+
+        System.out.println("See u soon ! >_<");
+        IOUtils.closeScanner();
+
     }
 
 }

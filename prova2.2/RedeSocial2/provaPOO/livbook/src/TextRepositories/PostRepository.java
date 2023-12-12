@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import Exceptions.DBException.DBException;
 import Exceptions.PostException.PostNotFoundException;
 import Models.AdvancedPost;
 import Models.Post;
@@ -88,6 +89,27 @@ public class PostRepository implements IPostRepository {
     public void deletePost(int idPost) throws PostNotFoundException {
         Post found = findPostById(idPost);
         posts.remove(found);
+    }
+
+    @Override
+    public void addLike(int idPost) throws PostNotFoundException, DBException {
+        Post found = findPostById(idPost);
+        found.like();
+    }
+
+    @Override
+    public void addDisklike(int idPost) throws PostNotFoundException, DBException {
+        Post found = findPostById(idPost);
+        found.dislike();
+    }
+
+    @Override
+    public void decrementViews(int idPost) throws PostNotFoundException, DBException {
+        Post found = findPostById(idPost);
+        if(found instanceof AdvancedPost){
+            ((AdvancedPost) found).decrementViews();
+            return;
+        }
     }
     
 }

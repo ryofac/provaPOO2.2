@@ -149,7 +149,18 @@ public class SocialNetwork {
     }
 
     public void includeProfile(Profile profile) throws ProfileAlreadyExistsException, DBException {
-        profileRepository.addProfile(profile);
+        try{
+            findProfileByName(profile.getName());
+            throw new ProfileAlreadyExistsException("Profile already exists");
+        } catch (ProfileNotFoundException e) {
+            try{
+                findProfileByEmail(profile.getEmail());
+                throw new ProfileAlreadyExistsException("Profile already exists");
+            } catch (ProfileNotFoundException ex) {
+                profileRepository.addProfile(profile);
+            }
+        }
+        
     }
 
     public Profile findProfileById(Integer id) throws ProfileNotFoundException, DBException {
@@ -185,18 +196,15 @@ public class SocialNetwork {
     }
 
     public void like(Integer idPost) throws PostNotFoundException, DBException {
-        Post found = this.findPostsbyId(idPost);
-        found.like();
+        postRepository.addDisklike(idPost);
     }
 
     public void dislike(Integer idPost) throws PostNotFoundException, DBException {
-        Post found = this.findPostsbyId(idPost);
-        found.dislike();
+        postRepository.addDisklike(idPost);
     }
 
     public void decrementViews(Integer idPost) throws PostNotFoundException, DBException {
-        Post post = postRepository.findPostById(idPost);
-        post.dislike();
+        postRepository.decrementViews(idPost);
 
     }
     
@@ -210,17 +218,19 @@ public class SocialNetwork {
     }
 
     public void likePost(Integer idPost) throws PostNotFoundException, DBException {
-        Post post = findPostsbyId(idPost);
-        post.like();
+        postRepository.addLike(idPost);
     }
 
     public void dislikePost(Integer idPost) throws PostNotFoundException, DBException {
-        Post post = findPostsbyId(idPost);
-        post.dislike();
+        postRepository.addDisklike(idPost);
     }
 
     public void deletePost(Integer idPost) throws PostNotFoundException, DBException {
         postRepository.deletePost(idPost);
+    }
+
+    public void seePost(int idPost) throws DBException, PostNotFoundException {
+        postRepository.decrementViews(idPost);
     }
 
     public void removeSeenPosts() throws DBException{
