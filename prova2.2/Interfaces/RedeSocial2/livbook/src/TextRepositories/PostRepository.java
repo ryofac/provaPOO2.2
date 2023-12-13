@@ -155,6 +155,7 @@ public class PostRepository implements IPostRepository {
                         includePost(toBeAdded);
                         break;
                 }
+                // Alguns prints são feitos mas são feitos para mapear o erro, não necessariamente o usuário precisa saber
             } catch (ProfileNotFoundException e) {
                 System.out.println("DB ERROR: user found in file not related to any post");
             } catch (NumberFormatException e) {

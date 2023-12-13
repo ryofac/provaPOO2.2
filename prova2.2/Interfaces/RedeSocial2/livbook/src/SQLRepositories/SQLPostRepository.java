@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.naming.spi.DirStateFactory.Result;
-
 import Exceptions.DBException.DBException;
 import Exceptions.PostException.PostNotFoundException;
 import Exceptions.ProfileException.ProfileNotFoundException;
@@ -342,7 +340,7 @@ public class SQLPostRepository implements IPostRepository {
                 "UPDATE POST SET DISLIKES = DISLIKES + 1 WHERE ID = ?"
             );
             psmt.setInt(1, idPost);
-            if(psmt.executeUpdate() == 0) throw new PostNotFoundException("Post with id " + idPost + " not found"));
+            if(psmt.executeUpdate() == 0) throw new PostNotFoundException("Post with id " + idPost + " not found");
         } catch (SQLException e) {
             throw new DBException("ERROR while trying to add dislike", e);
         } finally {

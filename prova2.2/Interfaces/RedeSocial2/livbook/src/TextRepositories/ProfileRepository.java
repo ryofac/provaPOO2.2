@@ -79,7 +79,8 @@ public class ProfileRepository implements IProfileRepository {
             String[] data = line.split(";");
             try {
                 addProfile(new Profile(Integer.parseInt(data[0]), data[1], data[2]));
-
+                
+            // Alguns prints são feitos mas são feitos para mapear o erro, não necessariamente o usuário precisa saber
             } catch (ProfileAlreadyExistsException e) {
                 System.err.println("DB ERROR: Conflict with existing user in memory and in file");
                 e.printStackTrace();

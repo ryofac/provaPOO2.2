@@ -19,7 +19,7 @@ public class Main {
         IProfileRepository profileRepositoryList = new ProfileRepository();
         IPostRepository postRepositoryList = new PostRepository(profileRepositoryList);
         
-        SocialNetwork socialNetwork = new SocialNetwork(profileRepository, postRepository);
+        SocialNetwork socialNetwork = new SocialNetwork(profileRepositoryList, postRepositoryList);
         App app = new App(socialNetwork);
         app.run();
     }
