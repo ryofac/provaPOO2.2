@@ -1,0 +1,3 @@
+02 - Explique o que é necessário para que a compilação da ClasseConcreta ocorra
+sem erros:
+Para ocorrer sem erros, é necessário que a classe concreta implemente o método abstrado imprimaAlgo presente na classe abstrata ClasseAbstrata, assim o contrato entre as classes se cumpre e o programa pode executar normalmente

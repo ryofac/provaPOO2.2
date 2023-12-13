@@ -1,0 +1,3 @@
+01 - Podemos instanciar classes abstratas? Justifique.
+R = Não, pois classes abstratas são classes que abstraem um conceito para outras classes que herdam dela, ou seja, não faz sentido instanciar uma classe abstrata, pois ela não possui um conceito concreto, apenas abstrato.
+Em poucas palavras, uma classe abstrata foi feita para generalizar outras classes, e não para ser instanciada.
